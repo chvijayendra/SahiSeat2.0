@@ -28,6 +28,7 @@ import {
   Send,
 } from 'lucide-react'
 import ChatPanel from '@/components/ChatPanel'
+import { openRazorpayCheckout } from '@/lib/razorpayClient'
 
 // Updated Student tabs matching requirements
 const TABS = [
@@ -108,23 +109,28 @@ function DashboardContent() {
   const fetchStudentData = async () => {
     setLoadingData(true)
     try {
-      // 1. Fetch Requests
+      // 1. Fetch Requests (updated table and mentor_id relation name)
       const { data: reqData } = await supabase
-        .from('requests')
+        .from('guidance_requests')
         .select(`
           *,
-          assigned_senior:assigned_senior_id ( id, name, college, branch, avatar_url )
+          assigned_senior:mentor_id ( id, name, college, branch, avatar_url )
         `)
         .eq('student_id', user.id)
         .order('created_at', { ascending: false })
       if (reqData) setRequests(reqData)
 
-      // 2. Fetch Saved Preferences
+      // 2. Fetch Saved Preferences (retrieve single preference row)
       const { data: prefData } = await supabase
         .from('saved_preferences')
         .select('*')
         .eq('student_id', user.id)
-      if (prefData) setPreferences(prefData)
+        .maybeSingle()
+      if (prefData) {
+        setPreferences(prefData ? [prefData] : [])
+      } else {
+        setPreferences([])
+      }
 
       // 3. Fetch Roadmaps
       const { data: roadmapData } = await supabase
@@ -161,7 +167,7 @@ function DashboardContent() {
     }
   }
 
-  // Create a new match request
+  // Create a new match request (payment-gated via Razorpay)
   const handleCreateRequest = async (e) => {
     e.preventDefault()
     if (!reqCollege.trim()) {
@@ -170,27 +176,44 @@ function DashboardContent() {
     }
     setReqCreating(true)
     try {
-      const { error } = await supabase
-        .from('requests')
-        .insert({
-          student_id: user.id,
-          college: reqCollege.trim(),
-          branch: reqBranch.trim(),
-          service_type: reqServiceType,
-          details: reqDetails.trim(),
-        })
+      const priceMap = {
+        chat: 3900,
+        voice: 9900,
+        preference: 19900,
+        roadmap: 14900,
+      }
+      const amountInPaise = priceMap[reqServiceType] || 9900
 
-      if (error) throw error
+      const payment = await openRazorpayCheckout({
+        amountInPaise,
+        student_id: user.id,
+        service_type: reqServiceType,
+        remarks: reqDetails.trim() || `${reqServiceType.toUpperCase()} consultation request`,
+        college: reqCollege.trim(),
+        branch: reqBranch.trim(),
+        name: 'SahiSeat',
+        description: `${reqServiceType.toUpperCase()} Guidance Consultation`,
+        prefill: {
+          name: profile?.name || '',
+          email: user?.email || '',
+          contact: profile?.phone || '',
+        }
+      })
+
+      if (!payment) {
+        setReqCreating(false)
+        return
+      }
 
       setReqCollege('')
       setReqBranch('')
       setReqDetails('')
       setShowRequestForm(false)
       fetchStudentData() // reload list
-      alert('Counseling request submitted successfully! SahiSeat matches you shortly.')
+      alert('Payment successful and counseling request submitted! SahiSeat matches you shortly.')
     } catch (err) {
       console.error(err)
-      alert(err.message || 'Failed to submit request')
+      alert(err.message || 'Failed to submit match request. Please try again.')
     } finally {
       setReqCreating(false)
     }
@@ -577,7 +600,7 @@ function DashboardContent() {
 
                           <Button
                             onClick={() => {
-                              const chat = conversations.find(c => c.senior_id === req.assigned_senior_id)
+                              const chat = conversations.find(c => c.senior_id === req.mentor_id)
                               if (chat) {
                                 setActiveChat(chat)
                                 setActiveTab('messages')
