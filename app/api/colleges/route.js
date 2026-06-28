@@ -21,33 +21,43 @@ let cachedColleges = null;
 
 function getRecordBranch(programName) {
   const name = (programName || "").toLowerCase().trim();
-  if (name.includes("computer science") || name.includes("computer engineering") || name.includes("cse")) {
-    return "CSE";
-  }
-  if (name.includes("artificial intelligence") || name.includes("ai") || name.includes("machine learning")) {
+
+  // AI (only pure AI branches)
+  if (
+    name.includes("artificial intelligence") ||
+    name.includes("artificial intelligence and machine learning") ||
+    name.includes("ai and machine learning") ||
+    name.includes("machine learning")
+  ) {
     return "AI";
   }
-  if (name.includes("information technology") || name.includes("it")) {
+
+  // CSE
+  if (
+    name.includes("computer science") ||
+    name.includes("computer engineering") ||
+    name.includes("software engineering") ||
+    name.includes("computer science and business systems") ||
+    name.includes("csbs") ||
+    name.includes("data science")
+  ) {
+    return "CSE";
+  }
+
+  // IT
+  if (name.includes("information technology")) {
     return "IT";
   }
-  if (name.includes("electronics and communication") || name.includes("ece") || name.includes("electronics & communication") || name.includes("telecommunication")) {
+
+  // ECE
+  if (
+    name.includes("electronics and communication") ||
+    name.includes("electronics & communication") ||
+    name.includes("telecommunication")
+  ) {
     return "ECE";
   }
-  if (name.includes("electrical") || name.includes("ee")) {
-    return "EE";
-  }
-  if (name.includes("mechanical")) {
-    return "Mechanical";
-  }
-  if (name.includes("civil")) {
-    return "Civil";
-  }
-  if (name.includes("chemical")) {
-    return "Chemical";
-  }
-  if (name.includes("biotechnol") || name.includes("bio-technology") || name.includes("bt")) {
-    return "Biotechnology";
-  }
+
   return "Other";
 }
 
