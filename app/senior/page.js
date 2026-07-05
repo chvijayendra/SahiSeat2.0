@@ -102,12 +102,12 @@ function SeniorDashboardContent() {
     try {
       // 1. Fetch assigned student requests
       const { data: reqData } = await supabase
-        .from('requests')
+        .from('guidance_requests')
         .select(`
           *,
           student:student_id ( id, name, email, avatar_url, target_college, branch )
         `)
-        .eq('assigned_senior_id', user.id)
+        .eq('mentor_id', user.id)
       
       if (reqData) setRequests(reqData)
 

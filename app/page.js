@@ -47,6 +47,7 @@ import Lenis from 'lenis'
 import { useAuth } from '@/context/AuthContext'
 import LoginModal from '@/components/LoginModal'
 import { supabase } from '@/lib/supabase'
+import { openRazorpayCheckout } from '@/lib/razorpayClient'
 
 // Category dropdown: label shown to user, value used to match Seat Type in CSV.
 const CATEGORIES = [
@@ -2292,27 +2293,50 @@ const uniqueColleges = Array.from(
     }
     setExpertModalLoading(true)
     setExpertModalStep('paying')
-    setTimeout(async () => {
-      try {
-        const { error } = await supabase
-          .from('preference_reviews')
-          .insert({
-            student_id: user.id,
-            original_list: savedPreferences,
-            feedback: expertRemarks.trim(),
-            status: 'pending'
-          })
 
-        if (error) throw error
-        setExpertModalStep('success')
-      } catch (err) {
-        console.error('Failed to create preference review:', err)
-        alert('Payment succeeded, but failed to save request to database: ' + err.message)
+    try {
+      const amountInPaise = 9900 // ₹99
+
+      const payment = await openRazorpayCheckout({
+        amountInPaise,
+        student_id: user.id,
+        service_type: 'preference',
+        remarks: expertRemarks.trim(),
+        college: savedPreferences.length > 0 ? savedPreferences[0].institute : 'Multiple',
+        branch: savedPreferences.length > 0 ? savedPreferences[0].program : '',
+        name: 'SahiSeat',
+        description: 'Preference List Expert Review',
+        prefill: {
+          name: user.user_metadata?.full_name || '',
+          email: user.email || '',
+          contact: '',
+        }
+      })
+
+      if (!payment) {
         setExpertModalStep('details')
-      } finally {
-        setExpertModalLoading(false)
+        return
       }
-    }, 1500)
+
+      const { error } = await supabase
+        .from('preference_reviews')
+        .insert({
+          student_id: user.id,
+          original_list: savedPreferences,
+          feedback: expertRemarks.trim(),
+          status: 'pending'
+        })
+
+      if (error) throw error
+
+      setExpertModalStep('success')
+    } catch (err) {
+      console.error('Failed to process payment:', err)
+      alert(err.message || 'Payment processing failed. Please try again.')
+      setExpertModalStep('details')
+    } finally {
+      setExpertModalLoading(false)
+    }
   }
 
   const handleOpenExpertReview = () => {
@@ -2740,7 +2764,6 @@ const App = () => {
           .from('saved_preferences')
           .select('preferences')
           .eq('student_id', user.id)
-          .eq('name', 'Main Choice List')
           .maybeSingle()
 
         if (error) throw error
@@ -2748,15 +2771,21 @@ const App = () => {
         const localListStr = localStorage.getItem('sahiseat_preferences')
         const localList = localListStr ? JSON.parse(localListStr) : []
 
-        if (data && data.preferences && data.preferences.length > 0) {
+        if (data && data.preferences) {
           setSavedPreferences(data.preferences)
           localStorage.setItem('sahiseat_preferences', JSON.stringify(data.preferences))
         } else if (localList && localList.length > 0) {
-          await supabase.from('saved_preferences').insert({
-            student_id: user.id,
-            name: 'Main Choice List',
-            preferences: localList
-          })
+          // First login after signup: insert local preferences to cloud
+          await supabase
+            .from('saved_preferences')
+            .upsert({
+              student_id: user.id,
+              name: 'Main Choice List',
+              preferences: localList,
+              created_at: new Date().toISOString()
+            }, {
+              onConflict: 'student_id'
+            })
           setSavedPreferences(localList)
         }
       } catch (err) {
@@ -2765,6 +2794,25 @@ const App = () => {
     }
     syncPreferences()
   }, [user])
+
+  const syncToCloud = async (updatedList) => {
+    if (!user) return
+    try {
+      const { error } = await supabase
+        .from('saved_preferences')
+        .upsert({
+          student_id: user.id,
+          name: 'Main Choice List',
+          preferences: updatedList,
+          created_at: new Date().toISOString()
+        }, {
+          onConflict: 'student_id'
+        })
+      if (error) throw error
+    } catch (err) {
+      console.error('Failed to auto-sync preferences to cloud:', err)
+    }
+  }
 
   const saveLocally = (updatedList) => {
     localStorage.setItem('sahiseat_preferences', JSON.stringify(updatedList))
@@ -2778,6 +2826,7 @@ const App = () => {
     const updated = [...savedPreferences, college]
     setSavedPreferences(updated)
     saveLocally(updated)
+    syncToCloud(updated)
   }
 
   const moveUp = (index) => {
@@ -2788,6 +2837,7 @@ const App = () => {
     updated[index - 1] = temp
     setSavedPreferences(updated)
     saveLocally(updated)
+    syncToCloud(updated)
   }
 
   const moveDown = (index) => {
@@ -2798,6 +2848,7 @@ const App = () => {
     updated[index + 1] = temp
     setSavedPreferences(updated)
     saveLocally(updated)
+    syncToCloud(updated)
   }
 
   const removePreference = (institute, program) => {
@@ -2806,12 +2857,14 @@ const App = () => {
     )
     setSavedPreferences(updated)
     saveLocally(updated)
+    syncToCloud(updated)
   }
 
   const clearAllPreferences = () => {
     if (window.confirm("Are you sure you want to clear your preference list?")) {
       setSavedPreferences([])
       saveLocally([])
+      syncToCloud([])
     }
   }
 
@@ -2843,34 +2896,7 @@ const App = () => {
     setSaveLoading(true)
     setSaveStatus('')
     try {
-      const { data: existing, error: fetchErr } = await supabase
-        .from('saved_preferences')
-        .select('id')
-        .eq('student_id', user.id)
-        .eq('name', 'Main Choice List')
-        .maybeSingle()
-
-      if (fetchErr) throw fetchErr
-
-      if (existing) {
-        const { error: updateErr } = await supabase
-          .from('saved_preferences')
-          .update({
-            preferences: savedPreferences,
-            created_at: new Date().toISOString()
-          })
-          .eq('id', existing.id)
-        if (updateErr) throw updateErr
-      } else {
-        const { error: insertErr } = await supabase
-          .from('saved_preferences')
-          .insert({
-            student_id: user.id,
-            name: 'Main Choice List',
-            preferences: savedPreferences
-          })
-        if (insertErr) throw insertErr
-      }
+      await syncToCloud(savedPreferences)
       setSaveStatus('Preferences saved to cloud successfully! ✓')
       setTimeout(() => setSaveStatus(''), 4000)
     } catch (err) {

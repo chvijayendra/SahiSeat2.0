@@ -29,6 +29,7 @@ import InteractiveParticles from '@/components/InteractiveParticles'
 import { useAuth } from '@/context/AuthContext'
 import LoginModal from '@/components/LoginModal'
 import { supabase } from '@/lib/supabase'
+import { openRazorpayCheckout } from '@/lib/razorpayClient'
 
 const DISCUSS_TOPICS = [
   "Placements",
@@ -218,6 +219,9 @@ function SeniorsContent() {
   // General coming soon popups (e.g. Starter predictor plan or Anonymous Communities)
   const [comingSoonModal, setComingSoonModal] = useState(null)
 
+  // Voice Call Razorpay payment state
+  const [voiceCallLoading, setVoiceCallLoading] = useState(false)
+
   const [isDesktop, setIsDesktop] = useState(true)
 
   useEffect(() => {
@@ -367,7 +371,7 @@ function SeniorsContent() {
           question: guidanceQuestion || "None"
         })
 
-       const {
+const {
   data: { user: currentUser }
 } = await supabase.auth.getUser()
 
@@ -376,24 +380,36 @@ if (!currentUser) {
   return
 }
 
-const { error } = await supabase
-  .from('requests')
-  .insert({
-    student_id: currentUser.id,
-    college: guidanceCollege,
-    branch: guidanceBranch,
-    service_type: guidanceServiceType,
-    details: detailsText,
-    status: 'pending'
-  })
+const priceMap = {
+  chat: 3900,
+  voice: 9900,
+}
 
-        if (error) throw error
+const amountInPaise = priceMap[guidanceServiceType] || 3900
+
+        const payment = await openRazorpayCheckout({
+          amountInPaise,
+          student_id: user.id,
+          service_type: guidanceServiceType,
+          remarks: detailsText,
+          college: guidanceCollege,
+          branch: guidanceBranch,
+          name: 'SahiSeat',
+          description: `${guidanceServiceType.toUpperCase()} Guidance Match`,
+          prefill: {
+            name: profile?.name || '',
+            email: user?.email || '',
+            contact: profile?.phone || '',
+          }
+        })
+
+        if (!payment) return
 
         setIsGuidanceModalOpen(true)
-      }catch (err) {
-  console.error("FULL ERROR:", err)
-  alert(JSON.stringify(err))
-}
+      } catch (err) {
+        console.error(err)
+        alert(err.message || "Failed to register request. Please try again.")
+      }
     }
 
     if (!user) {
@@ -484,14 +500,54 @@ const { error } = await supabase
     return "w-full flex-1 flex flex-col justify-center items-center"
   }
 
+  // Voice Call — Razorpay ₹99 payment handler
+  const handleVoiceCallPayment = async () => {
+    if (voiceCallLoading) return
+    setVoiceCallLoading(true)
+    try {
+      const result = await openRazorpayCheckout({
+        amountInPaise: 9900,
+        student_id:    user.id,
+        service_type:  'voice',
+        remarks:       '20-min Voice Consultation with Verified Senior',
+        college:       guidanceCollege || 'Any',
+        branch:        guidanceBranch || 'Any',
+        name:          'SahiSeat',
+        description:   '20-min Voice Consultation with Verified Senior',
+        receipt:       `rcpt_voice_${user.id}`,
+        prefill: {
+          name:    profile?.name  || '',
+          email:   user?.email    || '',
+          contact: profile?.phone || '',
+        },
+        theme: { color: '#7C3AED' },
+      })
+
+      if (!result) {
+        alert('Payment cancelled.')
+        return
+      }
+
+      alert(`✅ Payment successful!\nPayment ID: ${result.paymentId}\nYour voice call slot is verified and counseling request registered.`)
+    } catch (err) {
+      alert(err.message || 'Payment failed. Please try again.')
+    } finally {
+      setVoiceCallLoading(false)
+    }
+  }
+
   // Pricing click actions mapping
   const handlePricingClick = (plan) => {
     if (plan === 'chat') {
       setGuidanceServiceType('chat')
       scrollTo('guidance')
     } else if (plan === 'voice') {
-      setGuidanceServiceType('voice')
-      scrollTo('guidance')
+      // Require login before opening Razorpay
+      if (!user) {
+        openLoginModal(handleVoiceCallPayment)
+      } else {
+        handleVoiceCallPayment()
+      }
     } else if (plan === 'preference') {
       const openPref = () => {
         setPreferenceSubmitted(false)
@@ -1613,9 +1669,20 @@ const { error } = await supabase
                       <div className="mt-6">
                         <Button
                           onClick={() => handlePricingClick('voice')}
-                          className="w-full py-2 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold shadow-md hover:shadow-primary-purple/20 transition cursor-pointer"
+                          disabled={voiceCallLoading}
+                          className="w-full py-2 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold shadow-md hover:shadow-primary-purple/20 transition cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                         >
-                          Book Voice Call
+                          {voiceCallLoading ? (
+                            <>
+                              <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                              </svg>
+                              Processing...
+                            </>
+                          ) : (
+                            'Book Voice Call'
+                          )}
                         </Button>
                       </div>
                     </div>

@@ -76,6 +76,7 @@ export const AuthProvider = ({ children }) => {
           role: 'student',
           verification_status: 'unverified',
           official_email: '',
+          is_verified: false,
         }
         
         const { data: insertedData, error: insertError } = await supabase
@@ -115,6 +116,7 @@ export const AuthProvider = ({ children }) => {
           avatar_url: sessionUser.user_metadata?.avatar_url || '',
           role: 'student',
           verification_status: 'unverified',
+          is_verified: false,
         }
         setProfile(fallback)
         return fallback
@@ -279,6 +281,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
     setProfile(null)
     localStorage.removeItem('sahi_seat_login_role')
+    localStorage.removeItem('sahiseat_preferences') // Securely clear preferences on logout
     window.location.href = '/'
   }
 
