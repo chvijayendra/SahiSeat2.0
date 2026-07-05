@@ -371,11 +371,21 @@ function SeniorsContent() {
           question: guidanceQuestion || "None"
         })
 
-        const priceMap = {
-          chat: 3900,
-          voice: 9900,
-        }
-        const amountInPaise = priceMap[guidanceServiceType] || 3900
+const {
+  data: { user: currentUser }
+} = await supabase.auth.getUser()
+
+if (!currentUser) {
+  alert("Please login first")
+  return
+}
+
+const priceMap = {
+  chat: 3900,
+  voice: 9900,
+}
+
+const amountInPaise = priceMap[guidanceServiceType] || 3900
 
         const payment = await openRazorpayCheckout({
           amountInPaise,

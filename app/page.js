@@ -169,7 +169,7 @@ function Magnetic({ children, className = "" }) {
     const centerY = rect.top + rect.height / 2
     const dx = e.clientX - centerX
     const dy = e.clientY - centerY
-    const dist = Math.sqrt(dx*dx + dy*dy)
+    const dist = Math.sqrt(dx * dx + dy * dy)
 
     if (dist < 70) {
       const pullX = (dx / 70) * 12
@@ -285,14 +285,12 @@ function Nav({ hasResult, onReset, activeSection }) {
   ]
 
   return (
-    <header className={`sticky top-0 z-50 w-full transition-all duration-300 ease-in-out border-b hero-entrance ${
-      scrolled 
-        ? 'backdrop-blur-xl bg-background/80 border-border-custom shadow-[0_4px_30px_rgba(0,0,0,0.4)] h-14' 
+    <header className={`sticky top-0 z-50 w-full transition-all duration-300 ease-in-out border-b hero-entrance ${scrolled
+        ? 'backdrop-blur-xl bg-background/80 border-border-custom shadow-[0_4px_30px_rgba(0,0,0,0.4)] h-14'
         : 'backdrop-blur-md bg-background/40 border-transparent shadow-none h-16'
-    }`} style={{ animationDelay: '0ms' }}>
-      <div className={`container mx-auto flex items-center justify-between px-4 transition-all duration-300 ${
-        scrolled ? 'h-14' : 'h-16'
-      }`}>
+      }`} style={{ animationDelay: '0ms' }}>
+      <div className={`container mx-auto flex items-center justify-between px-4 transition-all duration-300 ${scrolled ? 'h-14' : 'h-16'
+        }`}>
         {/* Logo */}
         <button onClick={() => scrollTo('predict')} className="flex items-center gap-2.5 focus:outline-none cursor-pointer group">
           <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-purple to-accent-blue shadow-md transition-transform duration-300 group-hover:scale-105">
@@ -310,14 +308,13 @@ function Nav({ hasResult, onReset, activeSection }) {
               key={id}
               data-section={id}
               onClick={() => scrollTo(id)}
-              className={`nav-link transition-colors duration-300 focus:outline-none cursor-pointer py-1 ${
-                activeSection === id ? 'text-primary-text font-bold' : 'text-secondary-text/80 hover:text-primary-text'
-              }`}
+              className={`nav-link transition-colors duration-300 focus:outline-none cursor-pointer py-1 ${activeSection === id ? 'text-primary-text font-bold' : 'text-secondary-text/80 hover:text-primary-text'
+                }`}
             >
               {label}
             </button>
           ))}
-          <span 
+          <span
             className="absolute bottom-0 h-[2px] bg-gradient-to-r from-primary-purple to-accent-blue transition-all duration-300 ease-out pointer-events-none"
             style={{
               left: `${underlineStyle.left}px`,
@@ -488,7 +485,7 @@ function Nav({ hasResult, onReset, activeSection }) {
             >
               Talk to Verified Seniors ✨
             </a>
-            
+
             {!user ? (
               <button
                 onClick={() => {
@@ -562,8 +559,8 @@ function Nav({ hasResult, onReset, activeSection }) {
 
 function Hero() {
   return (
-    <section 
-      id="hero-section" 
+    <section
+      id="hero-section"
       className="relative overflow-hidden pt-8 pb-6 md:pt-14 md:pb-10"
     >
       {/* Premium subtle background radial glow */}
@@ -573,7 +570,7 @@ function Hero() {
 
       <div className="container mx-auto px-4">
         <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-          
+
           {/* Small Trust Badge */}
           <div className="inline-flex items-center gap-1.5 rounded-full border border-border-custom bg-secondary-bg/60 px-3.5 py-1 text-xs text-secondary-text shadow-sm backdrop-blur-md hero-cinematic badge-glow-hover" style={{ animationDelay: '100ms' }}>
             <span className="text-sm">📊</span>
@@ -693,108 +690,107 @@ function ResultCard({ rec, index, highlight = false, savedPreferences = [], onSa
       style={{ '--delay': animDelay }}
     >
       <div
-        className={`relative rounded-2xl border p-4 transition-all duration-300 card-hover-lift ${
-          highlight
+        className={`relative rounded-2xl border p-4 transition-all duration-300 card-hover-lift ${highlight
             ? 'border-primary-purple/35 bg-gradient-to-br from-primary-purple/[0.08] via-card to-card/50 shadow-md shadow-primary-purple/[0.02]'
             : 'border-border-custom bg-card hover:bg-card/75 hover:border-secondary-text/25'
-        }`}
+          }`}
       >
-      <div className="flex justify-between items-start gap-3 mb-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap text-[10px] mb-2">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-[#111118] border border-border-custom text-secondary-text text-[9px] font-bold font-mono">
-              {index + 1}
-            </span>
-            {highlight && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-purple/10 border border-primary-purple/20 text-secondary-purple font-semibold uppercase tracking-wider text-[8px] sm:text-[9px]">
-                <Trophy className="h-2.5 w-2.5 shrink-0" /> Best Match
+        <div className="flex justify-between items-start gap-3 mb-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap text-[10px] mb-2">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-[#111118] border border-border-custom text-secondary-text text-[9px] font-bold font-mono">
+                {index + 1}
               </span>
-            )}
-            <span className="px-2 py-0.5 rounded bg-[#111118]/60 border border-border-custom text-secondary-text/80 text-[8px] sm:text-[9px] uppercase tracking-wider font-mono">
-              R{rec.round}
+              {highlight && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-purple/10 border border-primary-purple/20 text-secondary-purple font-semibold uppercase tracking-wider text-[8px] sm:text-[9px]">
+                  <Trophy className="h-2.5 w-2.5 shrink-0" /> Best Match
+                </span>
+              )}
+              <span className="px-2 py-0.5 rounded bg-[#111118]/60 border border-border-custom text-secondary-text/80 text-[8px] sm:text-[9px] uppercase tracking-wider font-mono">
+                R{rec.round}
+              </span>
+            </div>
+
+            <h3 className="text-sm sm:text-base font-bold leading-snug text-primary-text flex items-center gap-1.5">
+              <Building2 className="h-4 w-4 shrink-0 text-primary-purple/80 hidden sm:block" />
+              <span className="truncate" title={rec.institute}>{shortInst}</span>
+            </h3>
+            <p className="mt-1 text-xs text-secondary-text leading-snug flex items-center gap-1.5 font-medium">
+              <BookOpen className="h-3.5 w-3.5 shrink-0 text-secondary-text/40 hidden sm:block" />
+              <span className="line-clamp-1" title={rec.program}>{rec.program}</span>
+            </p>
+          </div>
+
+          <div className="shrink-0 text-right flex flex-col items-end">
+            <div className="text-[10px] text-secondary-text/60 font-mono">
+              CR: <strong className="text-primary-text font-bold">{fmt(rec.closingRank)}</strong>
+            </div>
+            <div className="text-xs sm:text-sm font-bold tabular-nums text-success bg-success/10 px-2 py-0.5 rounded border border-success/20 mt-1 inline-block">
+              +{fmt(rec.rankGap)}
+            </div>
+            <div className="mt-2.5">
+              {isSaved ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold">
+                  Saved ✓
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSave && onSave({
+                    institute: rec.institute,
+                    program: rec.program,
+                    branch: rec.branch || "Other",
+                    type: rec.instituteType || "Other",
+                    state: getInstituteState(rec.institute),
+                    round: rec.round || 1
+                  })}
+                  className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-[10px] font-bold transition shadow-sm hover:shadow-primary-purple/20 cursor-pointer"
+                >
+                  Save College
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tags & Ranks Inline Strip */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border-custom pt-2 text-[10px]">
+          {/* Compact Metadata Tags */}
+          <div className="flex flex-wrap items-center gap-1.5 text-secondary-text/50 font-mono text-[8px] sm:text-[9px]">
+            <span>{rec.quota}</span>
+            <span>|</span>
+            <span>{rec.seatType}</span>
+            <span>|</span>
+            <span className="truncate max-w-[80px]">
+              {rec.gender === 'Female-only (including Supernumerary)' ? 'Female' : 'Gender-Neutral'}
             </span>
           </div>
-          
-          <h3 className="text-sm sm:text-base font-bold leading-snug text-primary-text flex items-center gap-1.5">
-            <Building2 className="h-4 w-4 shrink-0 text-primary-purple/80 hidden sm:block" />
-            <span className="truncate" title={rec.institute}>{shortInst}</span>
-          </h3>
-          <p className="mt-1 text-xs text-secondary-text leading-snug flex items-center gap-1.5 font-medium">
-            <BookOpen className="h-3.5 w-3.5 shrink-0 text-secondary-text/40 hidden sm:block" />
-            <span className="line-clamp-1" title={rec.program}>{rec.program}</span>
-          </p>
-        </div>
-        
-        <div className="shrink-0 text-right flex flex-col items-end">
-          <div className="text-[10px] text-secondary-text/60 font-mono">
-            CR: <strong className="text-primary-text font-bold">{fmt(rec.closingRank)}</strong>
-          </div>
-          <div className="text-xs sm:text-sm font-bold tabular-nums text-success bg-success/10 px-2 py-0.5 rounded border border-success/20 mt-1 inline-block">
-            +{fmt(rec.rankGap)}
-          </div>
-          <div className="mt-2.5">
-            {isSaved ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold">
-                Saved ✓
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onSave && onSave({
-                  institute: rec.institute,
-                  program: rec.program,
-                  branch: rec.branch || "Other",
-                  type: rec.instituteType || "Other",
-                  state: getInstituteState(rec.institute),
-                  round: rec.round || 1
-                })}
-                className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-[10px] font-bold transition shadow-sm hover:shadow-primary-purple/20 cursor-pointer"
-              >
-                Save College
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Tags & Ranks Inline Strip */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border-custom pt-2 text-[10px]">
-        {/* Compact Metadata Tags */}
-        <div className="flex flex-wrap items-center gap-1.5 text-secondary-text/50 font-mono text-[8px] sm:text-[9px]">
-          <span>{rec.quota}</span>
-          <span>|</span>
-          <span>{rec.seatType}</span>
-          <span>|</span>
-          <span className="truncate max-w-[80px]">
-            {rec.gender === 'Female-only (including Supernumerary)' ? 'Female' : 'Gender-Neutral'}
-          </span>
-        </div>
-        
-        {/* Ranks (Desktop shows opening rank, Mobile shows details toggle) */}
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-2 font-mono text-secondary-text/50 text-[9px] sm:text-[10px]">
-            <span>Op: <strong className="text-primary-text/80 font-semibold">{fmt(rec.openingRank)}</strong></span>
-          </div>
-          
-          <button
-            type="button"
-            onClick={() => setExpanded(!expanded)}
-            className="text-[9px] sm:hidden text-primary-purple hover:text-secondary-purple font-semibold transition py-0.5 px-2 rounded bg-primary-purple/5 border border-primary-purple/15"
-          >
-            {expanded ? "Hide Details" : "Show Details"}
-          </button>
-        </div>
-      </div>
+          {/* Ranks (Desktop shows opening rank, Mobile shows details toggle) */}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 font-mono text-secondary-text/50 text-[9px] sm:text-[10px]">
+              <span>Op: <strong className="text-primary-text/80 font-semibold">{fmt(rec.openingRank)}</strong></span>
+            </div>
 
-      {/* Collapsible details on mobile viewports */}
-      {expanded && (
-        <div className="mt-2.5 p-3 rounded-xl bg-background/80 border border-border-custom text-[10px] font-mono text-secondary-text/80 space-y-1 sm:hidden">
-          <div>Opening Rank: <strong className="text-primary-text">{fmt(rec.openingRank)}</strong></div>
-          <div>Seat Type: <strong className="text-primary-text">{rec.seatType}</strong></div>
-          <div>Gender: <strong className="text-primary-text">{rec.gender}</strong></div>
-          <div>Quota: <strong className="text-primary-text">{rec.quota}</strong></div>
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="text-[9px] sm:hidden text-primary-purple hover:text-secondary-purple font-semibold transition py-0.5 px-2 rounded bg-primary-purple/5 border border-primary-purple/15"
+            >
+              {expanded ? "Hide Details" : "Show Details"}
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Collapsible details on mobile viewports */}
+        {expanded && (
+          <div className="mt-2.5 p-3 rounded-xl bg-background/80 border border-border-custom text-[10px] font-mono text-secondary-text/80 space-y-1 sm:hidden">
+            <div>Opening Rank: <strong className="text-primary-text">{fmt(rec.openingRank)}</strong></div>
+            <div>Seat Type: <strong className="text-primary-text">{rec.seatType}</strong></div>
+            <div>Gender: <strong className="text-primary-text">{rec.gender}</strong></div>
+            <div>Quota: <strong className="text-primary-text">{rec.quota}</strong></div>
+          </div>
+        )}
       </div>
     </TiltCard>
   )
@@ -1204,17 +1200,17 @@ function Results({ result, query, savedPreferences = [], onSave }) {
 
   if (!result) return null
 
-  const { 
-    bestMatches = [], 
-    goodOptions = [], 
-    exploreMore = [], 
-    homeStateNitOpportunities = [], 
+  const {
+    bestMatches = [],
+    goodOptions = [],
+    exploreMore = [],
+    homeStateNitOpportunities = [],
     totalEligible = 0,
-    totalEligibleColleges = 0 
+    totalEligibleColleges = 0
   } = result
 
-  const firstNitName = homeStateNitOpportunities.length > 0 
-    ? abbreviateInstituteName(homeStateNitOpportunities[0].institute) 
+  const firstNitName = homeStateNitOpportunities.length > 0
+    ? abbreviateInstituteName(homeStateNitOpportunities[0].institute)
     : `NIT ${query.state}`
 
   // Filtering Logic
@@ -1226,18 +1222,72 @@ function Results({ result, query, savedPreferences = [], onSave }) {
       const program = (item.program || '').toLowerCase();
       const instType = (item.instituteType || '').toLowerCase();
       const branchCode = (item.branch || '').toLowerCase();
-      
-      const matchesSearch = !searchTerm || 
-        college.includes(queryStr) || 
-        program.includes(queryStr) || 
+
+      const matchesSearch = !searchTerm ||
+        college.includes(queryStr) ||
+        program.includes(queryStr) ||
         instType.includes(queryStr) ||
         branchCode.includes(queryStr);
-        
+
       const matchesInst = instFilter === 'All' || instType === instFilter.toLowerCase();
-      
-      const branch = item.branch || 'Other';
-      const matchesBranch = selectedBranches.length === 0 || selectedBranches.includes(branch);
-      
+
+      const programName = (
+        item.program ||
+        item.branch ||
+        ''
+      ).toLowerCase();
+
+      const getBranchCategory = (programName) => {
+        const p = (programName || '').toLowerCase();
+
+        // CSE
+        if (
+          p.includes('computer science') ||
+          p.includes('computer engineering')
+        ) {
+          return 'CSE';
+        }
+
+        // AI
+        if (
+          p.includes('artificial intelligence') ||
+          p.includes('machine learning') ||
+          p.includes('data science')
+        ) {
+          return 'AI';
+        }
+
+        // IT
+        if (
+          p.includes('information technology')
+        ) {
+          return 'IT';
+        }
+
+        // ECE
+        if (
+          p.includes('electronics and communication') ||
+          p.includes('electronics & communication')
+        ) {
+          return 'ECE';
+        }
+
+        return 'OTHER';
+      };
+
+      const matchesBranch =
+        selectedBranches.length === 0 ||
+        selectedBranches.includes(
+          getBranchCategory(programName)
+        );
+      console.log({
+        program: item.program,
+        selectedBranches,
+        category: getBranchCategory(programName),
+        matchesBranch
+      });
+
+
       return matchesSearch && matchesInst && matchesBranch;
     });
   };
@@ -1266,7 +1316,7 @@ function Results({ result, query, savedPreferences = [], onSave }) {
     <section ref={resultsRef} id="results" className="relative py-8 md:py-12 border-t border-border-custom bg-background">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-5xl">
-          
+
           {/* Compact SaaS Filter Toolbar */}
           <div className="mb-6 space-y-3 hero-entrance">
             {/* Row 1: Search Input & Sorting */}
@@ -1316,11 +1366,10 @@ function Results({ result, query, savedPreferences = [], onSave }) {
                       key={type}
                       type="button"
                       onClick={() => setInstFilter(type)}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                        isSel
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${isSel
                           ? 'bg-[#1c1c24] border border-border-custom/50 text-primary-text shadow-sm'
                           : 'border border-transparent text-secondary-text hover:text-primary-text'
-                      }`}
+                        }`}
                     >
                       {type}
                     </button>
@@ -1356,11 +1405,10 @@ function Results({ result, query, savedPreferences = [], onSave }) {
                           setSelectedBranches([...selectedBranches, branch]);
                         }
                       }}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                        isSel
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${isSel
                           ? 'bg-[#1c1c24] border-border-custom text-primary-text'
                           : 'bg-transparent border-border-custom/50 text-secondary-text hover:border-secondary-text hover:text-primary-text'
-                      }`}
+                        }`}
                     >
                       {branch}
                     </button>
@@ -1610,7 +1658,7 @@ function PredictForm({ onResult, hasResult, query }) {
 
             <CardContent className="relative p-6 md:p-10">
               <form onSubmit={onSubmit} className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                
+
                 {/* JEE Rank Input */}
                 <div className="md:col-span-2">
                   <Label htmlFor="rank" className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-secondary-text">
@@ -1705,11 +1753,10 @@ function PredictForm({ onResult, hasResult, query }) {
                               setPreferredBranches([...preferredBranches, branch]);
                             }
                           }}
-                          className={`px-4 py-2 rounded-2xl text-xs font-semibold border transition-all duration-200 cursor-pointer ${
-                            isSel
+                          className={`px-4 py-2 rounded-2xl text-xs font-semibold border transition-all duration-200 cursor-pointer ${isSel
                               ? 'bg-gradient-to-r from-primary-purple to-accent-blue border-transparent text-white shadow-md shadow-primary-purple/20'
                               : 'bg-[#111118] border-border-custom text-secondary-text hover:border-primary-purple/50 hover:text-primary-text'
-                          }`}
+                            }`}
                         >
                           {branch}
                         </button>
@@ -1782,7 +1829,7 @@ function Features() {
               <TiltCard
                 key={title}
                 className="rounded-2xl border border-border-custom bg-card p-6 hover:border-primary-purple/35 transition-all duration-300 shadow-sm features-reveal-item"
-                style={{ 
+                style={{
                   '--delay': `${i * 150}ms`,
                   '--rot': `${i % 2 === 0 ? '-1.5deg' : '1.5deg'}`
                 }}
@@ -1807,7 +1854,7 @@ function Features() {
               <TiltCard
                 key={title}
                 className="rounded-2xl border border-border-custom bg-[#111118]/50 p-4.5 flex items-center gap-3.5 opacity-65 hover:opacity-85 transition-opacity features-reveal-item"
-                style={{ 
+                style={{
                   '--delay': `${(i + 4) * 150}ms`,
                   '--rot': `${i % 2 === 0 ? '1.2deg' : '-1.2deg'}`
                 }}
@@ -1900,17 +1947,15 @@ function FAQ() {
                 >
                   <span>{q}</span>
                   <ChevronDown
-                    className={`h-4.5 w-4.5 shrink-0 text-secondary-text/60 transition-transform duration-250 ${
-                      openIdx === i ? 'rotate-180' : ''
-                    }`}
+                    className={`h-4.5 w-4.5 shrink-0 text-secondary-text/60 transition-transform duration-250 ${openIdx === i ? 'rotate-180' : ''
+                      }`}
                   />
                 </button>
-                <div 
-                  className={`border-t border-border-custom bg-[#09090B]/30 leading-relaxed text-sm text-secondary-text transition-all duration-300 ${
-                    openIdx === i 
-                      ? 'max-h-[300px] px-6 pb-5 pt-4 opacity-100' 
+                <div
+                  className={`border-t border-border-custom bg-[#09090B]/30 leading-relaxed text-sm text-secondary-text transition-all duration-300 ${openIdx === i
+                      ? 'max-h-[300px] px-6 pb-5 pt-4 opacity-100'
                       : 'max-h-0 px-6 py-0 opacity-0 overflow-hidden'
-                  }`}
+                    }`}
                 >
                   {a}
                 </div>
@@ -1930,7 +1975,7 @@ function About() {
         <ScrollReveal className="mx-auto max-w-xl">
           <div className="p-8 rounded-3xl border border-border-custom bg-card shadow-lg relative overflow-hidden card-hover-lift reveal-item">
             <div className="absolute top-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-primary-purple to-transparent" />
-            
+
             <h2 className="text-2xl md:text-3xl font-extrabold text-primary-text tracking-tight mb-4">About SahiSeat</h2>
             <p className="text-sm text-secondary-text leading-relaxed mb-6">
               SahiSeat helps JEE aspirants make smarter JoSAA and CSAB counseling decisions using
@@ -1939,7 +1984,7 @@ function About() {
             <p className="text-sm text-secondary-text mb-6">
               Built by <span className="text-primary-purple font-bold">Vijayendra Ch &amp; Avinash</span> · IIIT Vadodara
             </p>
-            
+
             <div className="grid grid-cols-2 gap-3.5 max-w-sm">
               <a
                 href="https://www.linkedin.com/in/ch-vijayendraswamy/"
@@ -2019,7 +2064,7 @@ function Footer() {
 
 function getInstituteState(instName) {
   const name = (instName || "").toLowerCase();
-  
+
   if (name.includes("jalandhar") || name.includes("punjab")) return "Punjab";
   if (name.includes("shibpur") || name.includes("durgapur") || name.includes("west bengal")) return "West Bengal";
   if (name.includes("jaipur") || name.includes("rajasthan")) return "Rajasthan";
@@ -2051,7 +2096,7 @@ function getInstituteState(instName) {
   if (name.includes("warangal") || name.includes("telangana")) return "Telangana";
   if (name.includes("surat") || name.includes("gujarat")) return "Gujarat";
   if (name.includes("nagpur") || name.includes("maharashtra") || name.includes("pune") || name.includes("mumbai")) return "Maharashtra";
-  
+
   return "Other";
 }
 
@@ -2106,22 +2151,31 @@ function ChoiceFillingDashboard({
 
   // Left panel filtering
   const filteredColleges = colleges.filter(c => {
-    const matchesSearch = !leftSearch || 
-      c.institute.toLowerCase().includes(leftSearch.toLowerCase()) || 
+    const matchesSearch = !leftSearch ||
+      c.institute.toLowerCase().includes(leftSearch.toLowerCase()) ||
       c.program.toLowerCase().includes(leftSearch.toLowerCase());
-      
+
     const matchesBranch = leftBranch === 'All' || c.branch === leftBranch;
     const matchesState = leftState === 'All' || c.state === leftState;
-    
+
     return matchesSearch && matchesBranch && matchesState;
   })
 
   // Sorting
-  const sortedColleges = [...filteredColleges].sort((a, b) => {
-    const instComp = a.institute.localeCompare(b.institute);
-    if (instComp !== 0) return instComp;
-    return a.program.localeCompare(b.program);
-  })
+ const sortedColleges = [...filteredColleges].sort((a, b) => {
+  const instComp = a.institute.localeCompare(b.institute);
+  if (instComp !== 0) return instComp;
+  return a.program.localeCompare(b.program);
+});
+
+const uniqueColleges = Array.from(
+  new Map(
+    sortedColleges.map((c) => [
+      `${c.institute}-${c.program}`,
+      c
+    ])
+  ).values()
+);
 
   // Drag-and-drop Handlers
   const handleDragStart = (e, index) => {
@@ -2162,13 +2216,13 @@ function ChoiceFillingDashboard({
     doc.setFontSize(20)
     doc.setTextColor(124, 58, 237) // SahiSeat Purple #7C3AED
     doc.text("SahiSeat", 20, 20)
-    
+
     doc.setFontSize(10)
     doc.setTextColor(113, 113, 122) // Gray
     doc.setFont("helvetica", "normal")
     doc.text("JoSAA & CSAB Choice Filling Preference List", 20, 26)
     doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 20, 31)
-    
+
     // Divider line
     doc.setDrawColor(228, 228, 231)
     doc.line(20, 36, 190, 36)
@@ -2216,11 +2270,11 @@ function ChoiceFillingDashboard({
       doc.text(pref.state || "N/A", 175, y)
 
       const rowHeight = Math.max(instLines.length, progLines.length) * 4.5 + 4
-      
+
       doc.setDrawColor(244, 244, 245)
       doc.line(20, y + rowHeight - 2, 190, y + rowHeight - 2)
       doc.setDrawColor(228, 228, 231) // reset
-      
+
       y += rowHeight
     })
 
@@ -2239,8 +2293,10 @@ function ChoiceFillingDashboard({
     }
     setExpertModalLoading(true)
     setExpertModalStep('paying')
+
     try {
       const amountInPaise = 9900 // ₹99
+
       const payment = await openRazorpayCheckout({
         amountInPaise,
         student_id: user.id,
@@ -2259,12 +2315,10 @@ function ChoiceFillingDashboard({
 
       if (!payment) {
         setExpertModalStep('details')
-        setExpertModalLoading(false)
         return
       }
 
-      // Record a preference reviews row for the senior/mentor audit
-      const { error: reviewErr } = await supabase
+      const { error } = await supabase
         .from('preference_reviews')
         .insert({
           student_id: user.id,
@@ -2273,7 +2327,7 @@ function ChoiceFillingDashboard({
           status: 'pending'
         })
 
-      if (reviewErr) throw reviewErr
+      if (error) throw error
 
       setExpertModalStep('success')
     } catch (err) {
@@ -2317,7 +2371,7 @@ function ChoiceFillingDashboard({
 
         {/* Outer Dashboard box */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto items-stretch">
-          
+
           {/* LEFT PANEL: Available Choices */}
           <div className="bg-white border border-[#E4E4E7] rounded-3xl p-5 md:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.02)] flex flex-col h-[650px] text-left">
             <div className="space-y-4 pb-4 border-b border-[#E4E4E7] shrink-0">
@@ -2325,7 +2379,7 @@ function ChoiceFillingDashboard({
                 <h3 className="text-sm font-extrabold uppercase tracking-widest text-[#1C1917] flex items-center gap-2">
                   <span>📖</span> Available Choices
                 </h3>
-                <span className="text-[10px] text-[#71717A] font-mono">Found: <strong>{sortedColleges.length}</strong></span>
+                <span className="text-[10px] text-[#71717A] font-mono">Found: <strong>{uniqueColleges.length}</strong></span>
               </div>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#A1A1AA]">
@@ -2389,10 +2443,18 @@ function ChoiceFillingDashboard({
                 <div className="text-center py-10 text-xs text-[#71717A]">No choices matching criteria.</div>
               ) : (
                 <>
-                  {sortedColleges.slice(0, displayLimit).map((c, i) => {
+                  {uniqueColleges.slice(0, displayLimit).map((c, i) => {
                     const isAdded = savedPreferences.some(
                       p => p.institute === c.institute && p.program === c.program
                     );
+                    const uniqueColleges = Array.from(
+  new Map(
+    sortedColleges.map((c) => [
+      `${c.institute}-${c.program}`,
+      c
+    ])
+  ).values()
+);
                     return (
                       <div key={i} className="p-3 rounded-xl border border-[#E4E4E7] bg-[#FAF9F6] hover:border-[#7C3AED]/50 hover:bg-white transition-all duration-200 flex items-center justify-between gap-3 text-left shadow-sm">
                         <div className="min-w-0 flex-1">
@@ -2421,12 +2483,12 @@ function ChoiceFillingDashboard({
                       </div>
                     );
                   })}
-                  {sortedColleges.length > displayLimit && (
+                  {uniqueColleges.length > displayLimit && (
                     <button
                       onClick={() => setDisplayLimit(prev => prev + 100)}
                       className="w-full py-2 rounded-xl border border-[#D4D4D8] bg-white hover:bg-[#FAF9F6] text-[10px] text-[#52525B] hover:text-[#1C1917] transition cursor-pointer font-bold shadow-sm"
                     >
-                      Load More ({sortedColleges.length - displayLimit} remaining)
+                      Load More ({uniqueColleges.length - displayLimit} remaining)
                     </button>
                   )}
                 </>
@@ -2475,11 +2537,10 @@ function ChoiceFillingDashboard({
                       onDrop={(e) => handleDrop(e, index)}
                       onDragEnter={() => setDragOverIndex(index)}
                       onDragLeave={() => setDragOverIndex(null)}
-                      className={`p-3 rounded-xl border bg-white flex items-center justify-between gap-3 text-left transition-all duration-200 cursor-grab active:cursor-grabbing shadow-sm ${
-                        isDragTarget 
-                          ? 'border-[#7C3AED] bg-[#7C3AED]/5 shadow-md scale-[1.01]' 
+                      className={`p-3 rounded-xl border bg-white flex items-center justify-between gap-3 text-left transition-all duration-200 cursor-grab active:cursor-grabbing shadow-sm ${isDragTarget
+                          ? 'border-[#7C3AED] bg-[#7C3AED]/5 shadow-md scale-[1.01]'
                           : 'border-[#E4E4E7] hover:border-[#7C3AED]/40'
-                      }`}
+                        }`}
                     >
                       <div className="min-w-0 flex items-start gap-2.5">
                         {/* Preference Number tag */}
@@ -2542,7 +2603,7 @@ function ChoiceFillingDashboard({
               <span className="text-[11px] font-bold text-[#1C1917]">{savedPreferences.length} choices saved</span>
               <span className="text-[9px] text-[#7C3AED] font-mono font-bold uppercase tracking-wider">JoSAA Simulator</span>
             </div>
-            
+
             <div className="flex gap-2.5 flex-wrap w-full sm:w-auto justify-center sm:justify-end">
               <button
                 onClick={downloadPreferencePDF}
@@ -2817,7 +2878,7 @@ const App = () => {
     savedPreferences.forEach((p, idx) => {
       text += `${idx + 1}. [${p.type}] ${p.institute} -- ${p.program} (State: ${p.state})\n`
     })
-    
+
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -2918,14 +2979,14 @@ const App = () => {
           const inst = (item.institute || '').toLowerCase();
           const q = (item.quota || '').toLowerCase();
           const st = (item.seatType || '').toLowerCase();
-          
+
           const isArch = p.includes('arch') || p.includes('architecture');
           const isPlan = p.includes('planning') || p.includes('bplan') || p.includes('b.plan');
           const isSpa = inst.includes('school of planning') || inst.includes('spa') || inst.includes('planning and architecture');
           const isDasa = q.includes('dasa') || q.includes('foreign') || q.includes('nri') || q.includes('oci') || q.includes('pio') ||
-                         st.includes('dasa') || st.includes('foreign') || st.includes('nri') || st.includes('oci') || st.includes('pio') ||
-                         p.includes('dasa') || p.includes('nri') || p.includes('foreign');
-          
+            st.includes('dasa') || st.includes('foreign') || st.includes('nri') || st.includes('oci') || st.includes('pio') ||
+            p.includes('dasa') || p.includes('nri') || p.includes('foreign');
+
           return !isArch && !isPlan && !isSpa && !isDasa;
         });
       };
@@ -2997,7 +3058,7 @@ const App = () => {
       if (!predictEl) return;
       const predictRect = predictEl.getBoundingClientRect();
       const isFormVisible = predictRect.top < window.innerHeight && predictRect.bottom > 0;
-      
+
       const choiceFillingEl = document.getElementById("choice-filling");
       let isChoiceFillingVisible = false;
       if (choiceFillingEl) {

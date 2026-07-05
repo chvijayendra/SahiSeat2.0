@@ -82,7 +82,6 @@ function AdminDashboardContent() {
   const [inspectedPayments, setInspectedPayments] = useState([])
   const [inspectedRequests, setInspectedRequests] = useState([])
   const [inspectingLoading, setInspectingLoading] = useState(false)
-
   // Selection states
   const [selectedSeniorForRequest, setSelectedSeniorForRequest] = useState({}) // request_id -> senior_id
   const [requestNotes, setRequestNotes] = useState({}) // request_id -> notes_text
@@ -100,13 +99,56 @@ function AdminDashboardContent() {
     try {
       if (activeTab === 'dashboard') {
         await loadAnalytics()
+
+        // Fetch pending seniors
+        const { data: pendingData, error: pendingError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('verification_status', 'pending_approval')
+
+        console.log("Pending Seniors:", pendingData)
+        console.log("Pending Error:", pendingError)
+
+        if (pendingData) setPendingSeniors(pendingData)
+
+        // Fetch approved seniors
+        const { data: approvedData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'senior')
+          .eq('verification_status', 'approved')
+
+        if (approvedData) setApprovedSeniors(approvedData)
+
+        // Fetch requests
+        const { data: reqData } = await supabase
+          .from('requests')
+          .select(`
+      *,
+      student:student_id ( id, name, email, avatar_url )
+    `)
+          .order('created_at', { ascending: false })
+
+        if (reqData) setRequests(reqData)
+
+        // Fetch conversations
+        const { data: convData } = await supabase
+          .from('conversations')
+          .select(`
+      *,
+      student:student_id ( id, name, email, avatar_url ),
+      senior:senior_id ( id, name, email, avatar_url, college )
+    `)
+
+        if (convData) setConversations(convData)
+
       } else if (activeTab === 'students') {
         await loadStudents()
       } else if (activeTab === 'mentors') {
         await loadMentors()
       } else if (activeTab === 'requests') {
         await loadRequests()
-        await loadMentors() // Load mentors for dropdown assignment
+        await loadMentors()
       } else if (activeTab === 'payments') {
         await loadPayments()
       } else if (activeTab === 'chats') {
@@ -297,7 +339,7 @@ function AdminDashboardContent() {
   // Mentor approvals / control actions
   const handleApproveMentor = async (seniorId) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           role: 'senior',
@@ -306,10 +348,30 @@ function AdminDashboardContent() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', seniorId)
+        .select()
 
       if (error) throw error
+
+
       alert('Mentor verification approved successfully!')
+
+      // Update local state
+      const approvedSenior = pendingSeniors.find(s => s.id === seniorId)
+      setPendingSeniors(prev => prev.filter(s => s.id !== seniorId))
+
+      if (approvedSenior) {
+        setApprovedSeniors(prev => [
+          ...prev,
+          {
+            ...approvedSenior,
+            role: 'senior',
+            verification_status: 'approved'
+          }
+        ])
+      }
+
       fetchAdminData()
+
     } catch (err) {
       alert(err.message || 'Approval failed')
     }
@@ -382,6 +444,8 @@ function AdminDashboardContent() {
           senior_id: seniorId,
           request_id: requestId,
         })
+      console.log("Conversation Error:", convError)
+      alert(JSON.stringify(convError))
 
       if (convError && convError.code !== '23505') { // unique key ignore
         throw convError
@@ -539,7 +603,7 @@ function AdminDashboardContent() {
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto p-4 sm:p-8 gap-8 relative z-10">
-        
+
         {/* Navigation Sidebar */}
         <aside className="w-full lg:w-60 shrink-0 flex flex-col gap-1.5">
           {TABS.map((tab) => {
@@ -554,11 +618,10 @@ function AdminDashboardContent() {
                   setInspectingStudent(null)
                   resetFilters()
                 }}
-                className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
-                  isSel
-                    ? 'bg-gradient-to-r from-primary-purple/10 to-accent-blue/10 border border-primary-purple/35 text-[#A855F7]'
-                    : 'border border-transparent text-[#A1A1AA] hover:bg-[#13131A] hover:text-[#FAFAFA]'
-                }`}
+                className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${isSel
+                  ? 'bg-gradient-to-r from-primary-purple/10 to-accent-blue/10 border border-primary-purple/35 text-[#A855F7]'
+                  : 'border border-transparent text-[#A1A1AA] hover:bg-[#13131A] hover:text-[#FAFAFA]'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon className="h-4.5 w-4.5" />
@@ -570,8 +633,7 @@ function AdminDashboardContent() {
         </aside>
 
         {/* Console Viewport */}
-        <main className="flex-1 bg-[#13131A]/40 border border-border-custom rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm min-h-[600px] flex flex-col">
-          
+        <main className="flex-1 bg-[#13131A]/40 border border-border-custom rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm min-h-[600px] flex flex-col">upstream/main
           {loadingData && (
             <div className="flex justify-center items-center h-48">
               <Loader2 className="h-8 w-8 animate-spin text-primary-purple" />
@@ -649,7 +711,7 @@ function AdminDashboardContent() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
-                
+
                 {/* Students List */}
                 <div className="lg:col-span-7 space-y-3">
                   {getFilteredItems(students).length === 0 ? (
@@ -663,11 +725,10 @@ function AdminDashboardContent() {
                         <button
                           key={student.id}
                           onClick={() => inspectStudent(student)}
-                          className={`w-full p-4 rounded-xl border text-left transition flex justify-between items-center ${
-                            inspectingStudent?.id === student.id
-                              ? 'border-[#7C3AED] bg-[#7C3AED]/5'
-                              : 'border-border-custom bg-[#13131A] hover:bg-[#13131A]/85'
-                          }`}
+                          className={`w-full p-4 rounded-xl border text-left transition flex justify-between items-center ${inspectingStudent?.id === student.id
+                            ? 'border-[#7C3AED] bg-[#7C3AED]/5'
+                            : 'border-border-custom bg-[#13131A] hover:bg-[#13131A]/85'
+                            }`}
                         >
                           <div className="min-w-0">
                             <span className="text-xs font-bold text-[#FAFAFA] block truncate">{student.name}</span>
@@ -836,6 +897,8 @@ function AdminDashboardContent() {
                             rel="noopener noreferrer"
                             className="text-[10px] text-primary-purple hover:underline font-semibold inline-block pt-1"
                           >
+
+
                             View LinkedIn Profile Link ↗
                           </a>
                         )}
@@ -874,298 +937,305 @@ function AdminDashboardContent() {
                             </Button>
                           </>
                         )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                        upstream/main
+                      </div >
+                    </div >
+                  ))
+                  }
+                </div >
               )}
-            </div>
+            </div >
           )}
 
           {/* TAB: GUIDANCE REQUESTS */}
-          {activeTab === 'requests' && !loadingData && (
-            <div className="space-y-6 animate-in fade-in duration-200 flex-1 flex flex-col">
-              <div>
-                <h2 className="text-xl font-black text-[#FAFAFA] tracking-tight">Match Requests & Assignments</h2>
-                <p className="text-xs text-[#A1A1AA] mt-1">Review active transactions, assign verified mentors, update request status, and track admin remarks.</p>
-              </div>
-
-              {/* Search/Filters */}
-              <div className="flex gap-3 flex-wrap">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 h-10 bg-[#13131A]/60 border border-border-custom rounded-xl text-xs text-[#FAFAFA] outline-none cursor-pointer"
-                >
-                  <option value="All">All Match Statuses</option>
-                  <option value="pending">Pending Match</option>
-                  <option value="assigned">Assigned Senior</option>
-                  <option value="completed">Completed Matches</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              {getFilteredItems(requests).length === 0 ? (
-                <div className="border border-dashed border-border-custom rounded-2xl p-12 text-center text-xs text-secondary-text">
-                  No matching guidance requests found.
+          {
+            activeTab === 'requests' && !loadingData && (
+              <div className="space-y-6 animate-in fade-in duration-200 flex-1 flex flex-col">
+                <div>
+                  <h2 className="text-xl font-black text-[#FAFAFA] tracking-tight">Match Requests & Assignments</h2>
+                  <p className="text-xs text-[#A1A1AA] mt-1">Review active transactions, assign verified mentors, update request status, and track admin remarks.</p>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {getFilteredItems(requests).map((req) => {
-                    const approvedMentors = mentors.filter((m) => m.verification_status === 'approved')
-                    return (
-                      <div key={req.id} className="p-5 rounded-2xl border border-border-custom bg-[#13131A] space-y-4 text-left">
-                        <div className="flex justify-between items-start flex-wrap gap-3">
-                          <div>
-                            <span className="text-[9px] font-bold text-[#A855F7] font-mono uppercase tracking-wider block">GUIDANCE MATCH SERVICE</span>
-                            <h4 className="text-sm font-bold text-primary-text pt-0.5">Student: {req.student?.name} ({req.student?.email})</h4>
-                            <span className="text-[10px] text-zinc-500 block font-mono">Submitted Date: {new Date(req.created_at).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Badge className="bg-[#7C3AED]/15 border border-[#7C3AED]/20 text-[#A855F7] text-[8px] uppercase tracking-wider font-mono">
-                              {req.service_type}
-                            </Badge>
-                            <Badge className={`text-[8px] font-mono uppercase ${
-                              req.status === 'pending'
+
+                {/* Search/Filters */}
+                <div className="flex gap-3 flex-wrap">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 h-10 bg-[#13131A]/60 border border-border-custom rounded-xl text-xs text-[#FAFAFA] outline-none cursor-pointer"
+                  >
+                    <option value="All">All Match Statuses</option>
+                    <option value="pending">Pending Match</option>
+                    <option value="assigned">Assigned Senior</option>
+                    <option value="completed">Completed Matches</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                {getFilteredItems(requests).length === 0 ? (
+                  <div className="border border-dashed border-border-custom rounded-2xl p-12 text-center text-xs text-secondary-text">
+                    No matching guidance requests found.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {getFilteredItems(requests).map((req) => {
+                      const approvedMentors = mentors.filter((m) => m.verification_status === 'approved')
+                      return (
+                        <div key={req.id} className="p-5 rounded-2xl border border-border-custom bg-[#13131A] space-y-4 text-left">
+                          <div className="flex justify-between items-start flex-wrap gap-3">
+                            <div>
+                              <span className="text-[9px] font-bold text-[#A855F7] font-mono uppercase tracking-wider block">GUIDANCE MATCH SERVICE</span>
+                              <h4 className="text-sm font-bold text-primary-text pt-0.5">Student: {req.student?.name} ({req.student?.email})</h4>
+                              <span className="text-[10px] text-zinc-500 block font-mono">Submitted Date: {new Date(req.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge className="bg-[#7C3AED]/15 border border-[#7C3AED]/20 text-[#A855F7] text-[8px] uppercase tracking-wider font-mono">
+                                {req.service_type}
+                              </Badge>
+                              <Badge className={`text-[8px] font-mono uppercase ${req.status === 'pending'
                                 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                                 : req.status === 'assigned'
-                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                : req.status === 'completed'
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                            }`}>
-                              {req.status}
-                            </Badge>
+                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                  : req.status === 'completed'
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                }`}>
+                                {req.status}
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* College details & remarks */}
-                        <div className="p-3.5 rounded-xl bg-[#09090B]/60 border border-border-custom text-xs space-y-1">
-                          <div><span className="text-secondary-text">Target College:</span> <strong className="text-primary-text">{req.college || 'Any'}</strong></div>
-                          {req.branch && <div><span className="text-secondary-text">Preferred Branch:</span> <strong className="text-primary-text">{req.branch}</strong></div>}
-                          {req.remarks && <div className="pt-1 text-secondary-text italic">&ldquo;{req.remarks}&rdquo;</div>}
-                        </div>
-
-                        {/* Assigned Senior status */}
-                        {req.status === 'assigned' && req.mentor && (
-                          <div className="p-3 bg-[#09090B]/40 border border-border-custom rounded-xl text-xs flex justify-between items-center">
-                            <span>Matched Senior Mentor: <strong className="text-accent-blue">{req.mentor.name}</strong> ({req.mentor.college})</span>
-                            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[8px] uppercase font-mono">Matched ✓</Badge>
+                          {/* College details & remarks */}
+                          <div className="p-3.5 rounded-xl bg-[#09090B]/60 border border-border-custom text-xs space-y-1">
+                            <div><span className="text-secondary-text">Target College:</span> <strong className="text-primary-text">{req.college || 'Any'}</strong></div>
+                            {req.branch && <div><span className="text-secondary-text">Preferred Branch:</span> <strong className="text-primary-text">{req.branch}</strong></div>}
+                            {req.remarks && <div className="pt-1 text-secondary-text italic">&ldquo;{req.remarks}&rdquo;</div>}
                           </div>
-                        )}
 
-                        {/* Admin Action Interface */}
-                        <div className="pt-2 border-t border-border-custom space-y-3">
-                          {req.status === 'pending' && (
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              {/* Match selection */}
-                              <div className="flex-1">
-                                <select
-                                  value={selectedSeniorForRequest[req.id] || ''}
-                                  onChange={(e) => setSelectedSeniorForRequest(prev => ({ ...prev, [req.id]: e.target.value }))}
-                                  className="w-full h-10 px-3 bg-[#09090B]/60 border border-border-custom rounded-xl text-xs text-primary-text focus:border-[#7C3AED] outline-none cursor-pointer"
-                                >
-                                  <option value="">-- Choose Approved Senior Mentor --</option>
-                                  {approvedMentors.map((senior) => (
-                                    <option key={senior.id} value={senior.id}>
-                                      {senior.name} (College: {senior.college || '—'} • Branch: {senior.branch || '—'})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              <Button
-                                onClick={() => handleAssignMentor(req.id, req.student_id)}
-                                className="h-10 px-5 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold cursor-pointer border-none shadow-md shrink-0"
-                              >
-                                Match & Connect Senior
-                              </Button>
+                          {/* Assigned Senior status */}
+                          {req.status === 'assigned' && req.mentor && (
+                            <div className="p-3 bg-[#09090B]/40 border border-border-custom rounded-xl text-xs flex justify-between items-center">
+                              <span>Matched Senior Mentor: <strong className="text-accent-blue">{req.mentor.name}</strong> ({req.mentor.college})</span>
+                              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[8px] uppercase font-mono">Matched ✓</Badge>
                             </div>
                           )}
 
-                          {/* Action toggle states */}
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            {req.status === 'assigned' && (
-                              <Button
-                                onClick={() => handleUpdateStatus(req.id, 'completed')}
-                                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg cursor-pointer border-none"
-                              >
-                                Mark Complete
-                              </Button>
+                          {/* Admin Action Interface */}
+                          <div className="pt-2 border-t border-border-custom space-y-3">
+                            {req.status === 'pending' && (
+                              <div className="flex flex-col sm:flex-row gap-3">
+                                {/* Match selection */}
+                                <div className="flex-1">
+                                  <select
+                                    value={selectedSeniorForRequest[req.id] || ''}
+                                    onChange={(e) => setSelectedSeniorForRequest(prev => ({ ...prev, [req.id]: e.target.value }))}
+                                    className="w-full h-10 px-3 bg-[#09090B]/60 border border-border-custom rounded-xl text-xs text-primary-text focus:border-[#7C3AED] outline-none cursor-pointer"
+                                  >
+                                    <option value="">-- Choose Approved Senior Mentor --</option>
+                                    {approvedMentors.map((senior) => (
+                                      <option key={senior.id} value={senior.id}>
+                                        {senior.name} (College: {senior.college || '—'} • Branch: {senior.branch || '—'})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <Button
+                                  onClick={() => handleAssignMentor(req.id, req.student_id)}
+                                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold cursor-pointer border-none shadow-md shrink-0"
+                                >
+                                  Match & Connect Senior
+                                </Button>
+                              </div>
                             )}
-                            {req.status !== 'cancelled' && req.status !== 'completed' && (
+
+                            {/* Action toggle states */}
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                              {req.status === 'assigned' && (
+                                <Button
+                                  onClick={() => handleUpdateStatus(req.id, 'completed')}
+                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg cursor-pointer border-none"
+                                >
+                                  Mark Complete
+                                </Button>
+                              )}
+                              {req.status !== 'cancelled' && req.status !== 'completed' && (
+                                <Button
+                                  onClick={() => handleUpdateStatus(req.id, 'cancelled')}
+                                  className="px-3.5 py-1.5 bg-rose-600/10 border border-rose-600/20 text-rose-400 hover:bg-rose-600/20 text-[10px] font-bold rounded-lg cursor-pointer"
+                                >
+                                  Cancel Request
+                                </Button>
+                              )}
                               <Button
-                                onClick={() => handleUpdateStatus(req.id, 'cancelled')}
-                                className="px-3.5 py-1.5 bg-rose-600/10 border border-rose-600/20 text-rose-400 hover:bg-rose-600/20 text-[10px] font-bold rounded-lg cursor-pointer"
+                                onClick={() => handleDeleteRequest(req.id)}
+                                className="p-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-lg cursor-pointer"
+                                title="Delete permanently"
                               >
-                                Cancel Request
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
-                            )}
-                            <Button
-                              onClick={() => handleDeleteRequest(req.id)}
-                              className="p-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-lg cursor-pointer"
-                              title="Delete permanently"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                            </div>
 
-                          {/* Admin internal notes */}
-                          <div className="flex items-center gap-2 pt-1">
-                            <Input
-                              placeholder="Add internal administrator notes or match tracking logs..."
-                              value={requestNotes[req.id] || ''}
-                              onChange={(e) => setRequestNotes(prev => ({ ...prev, [req.id]: e.target.value }))}
-                              className="flex-1 h-9 bg-[#09090B]/60 text-[10px] border-border-custom rounded-lg"
-                            />
-                            <Button
-                              onClick={() => handleSaveRequestNotes(req.id)}
-                              className="px-3 h-9 bg-zinc-800 text-[10px] text-white rounded-lg cursor-pointer border-none"
-                            >
-                              Save Notes
-                            </Button>
-                          </div>
+                            {/* Admin internal notes */}
+                            <div className="flex items-center gap-2 pt-1">
+                              <Input
+                                placeholder="Add internal administrator notes or match tracking logs..."
+                                value={requestNotes[req.id] || ''}
+                                onChange={(e) => setRequestNotes(prev => ({ ...prev, [req.id]: e.target.value }))}
+                                className="flex-1 h-9 bg-[#09090B]/60 text-[10px] border-border-custom rounded-lg"
+                              />
+                              <Button
+                                onClick={() => handleSaveRequestNotes(req.id)}
+                                className="px-3 h-9 bg-zinc-800 text-[10px] text-white rounded-lg cursor-pointer border-none"
+                              >
+                                Save Notes
+                              </Button>
+                            </div>
 
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          }
 
           {/* TAB: PAYMENTS */}
-          {activeTab === 'payments' && !loadingData && (
-            <div className="space-y-6 animate-in fade-in duration-200 flex-1 flex flex-col">
-              <div>
-                <h2 className="text-xl font-black text-[#FAFAFA] tracking-tight">Payments Ledger</h2>
-                <p className="text-xs text-[#A1A1AA] mt-1">Audit active transaction signatures, Razorpay details, and student funds capture logs.</p>
-              </div>
-
-              {/* Search bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3.5 h-4 w-4 text-zinc-500" />
-                <Input
-                  placeholder="Search payments ledger by student name, payment id, or order id..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-11 bg-[#13131A]/60 border-border-custom text-xs rounded-xl"
-                />
-              </div>
-
-              {getFilteredItems(payments).length === 0 ? (
-                <div className="border border-dashed border-border-custom rounded-2xl p-12 text-center text-xs text-secondary-text">
-                  No payment records found.
+          {
+            activeTab === 'payments' && !loadingData && (
+              <div className="space-y-6 animate-in fade-in duration-200 flex-1 flex flex-col">
+                <div>
+                  <h2 className="text-xl font-black text-[#FAFAFA] tracking-tight">Payments Ledger</h2>
+                  <p className="text-xs text-[#A1A1AA] mt-1">Audit active transaction signatures, Razorpay details, and student funds capture logs.</p>
                 </div>
-              ) : (
-                <div className="overflow-x-auto border border-border-custom rounded-xl bg-[#09090B]/40">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-border-custom bg-[#13131A]/60">
-                        <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Student</th>
-                        <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Service Format</th>
-                        <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Captured Amount</th>
-                        <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Razorpay Identifiers</th>
-                        <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Date & Time</th>
-                        <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider text-right">Refund Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border-custom">
-                      {getFilteredItems(payments).map((p) => (
-                        <tr key={p.id} className="hover:bg-[#13131A]/30 transition">
-                          <td className="p-3.5">
-                            <span className="font-bold text-primary-text block">{p.student?.name || 'Unknown Student'}</span>
-                            <span className="text-[9px] text-secondary-text block font-mono">{p.student?.email}</span>
-                          </td>
-                          <td className="p-3.5 uppercase font-mono text-[#A855F7] font-semibold">{p.service}</td>
-                          <td className="p-3.5 font-bold text-emerald-400 font-mono">₹{p.amount}</td>
-                          <td className="p-3.5 leading-relaxed font-mono text-[10px]">
-                            <div>Payment: <span className="text-accent-blue">{p.razorpay_payment_id}</span></div>
-                            <div>Order: <span className="text-zinc-500">{p.razorpay_order_id}</span></div>
-                          </td>
-                          <td className="p-3.5 text-secondary-text font-mono">
-                            {new Date(p.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <Button
-                              onClick={() => handleTriggerMockRefund(p.razorpay_payment_id)}
-                              className="px-2.5 py-1 text-[9px] bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg hover:bg-rose-500/20 cursor-pointer"
-                            >
-                              Refund
-                            </Button>
-                          </td>
+
+                {/* Search bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-3.5 h-4 w-4 text-zinc-500" />
+                  <Input
+                    placeholder="Search payments ledger by student name, payment id, or order id..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-11 bg-[#13131A]/60 border-border-custom text-xs rounded-xl"
+                  />
+                </div>
+
+                {getFilteredItems(payments).length === 0 ? (
+                  <div className="border border-dashed border-border-custom rounded-2xl p-12 text-center text-xs text-secondary-text">
+                    No payment records found.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-border-custom rounded-xl bg-[#09090B]/40">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-border-custom bg-[#13131A]/60">
+                          <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Student</th>
+                          <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Service Format</th>
+                          <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Captured Amount</th>
+                          <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Razorpay Identifiers</th>
+                          <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider">Date & Time</th>
+                          <th className="p-3.5 text-secondary-text font-bold uppercase tracking-wider text-right">Refund Action</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+                      </thead>
+                      <tbody className="divide-y divide-border-custom">
+                        {getFilteredItems(payments).map((p) => (
+                          <tr key={p.id} className="hover:bg-[#13131A]/30 transition">
+                            <td className="p-3.5">
+                              <span className="font-bold text-primary-text block">{p.student?.name || 'Unknown Student'}</span>
+                              <span className="text-[9px] text-secondary-text block font-mono">{p.student?.email}</span>
+                            </td>
+                            <td className="p-3.5 uppercase font-mono text-[#A855F7] font-semibold">{p.service}</td>
+                            <td className="p-3.5 font-bold text-emerald-400 font-mono">₹{p.amount}</td>
+                            <td className="p-3.5 leading-relaxed font-mono text-[10px]">
+                              <div>Payment: <span className="text-accent-blue">{p.razorpay_payment_id}</span></div>
+                              <div>Order: <span className="text-zinc-500">{p.razorpay_order_id}</span></div>
+                            </td>
+                            <td className="p-3.5 text-secondary-text font-mono">
+                              {new Date(p.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <Button
+                                onClick={() => handleTriggerMockRefund(p.razorpay_payment_id)}
+                                className="px-2.5 py-1 text-[9px] bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg hover:bg-rose-500/20 cursor-pointer"
+                              >
+                                Refund
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          }
 
           {/* TAB: MONITOR CHATS */}
-          {activeTab === 'chats' && !loadingData && (
-            <div className="space-y-6 animate-in fade-in duration-200 flex-1 flex flex-col">
-              <div>
-                <h2 className="text-xl font-black text-[#FAFAFA] tracking-tight">Monitor Conversations</h2>
-                <p className="text-xs text-[#A1A1AA] mt-1">Moderator log checker for matching channels. Direct admin response support enabled.</p>
-              </div>
+          {
+            activeTab === 'chats' && !loadingData && (
+              <div className="space-y-6 animate-in fade-in duration-200 flex-1 flex flex-col">
+                <div>
+                  <h2 className="text-xl font-black text-[#FAFAFA] tracking-tight">Monitor Conversations</h2>
+                  <p className="text-xs text-[#A1A1AA] mt-1">Moderator log checker for matching channels. Direct admin response support enabled.</p>
+                </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[450px]">
-                {/* Rooms selection list */}
-                <div className="lg:col-span-4 border border-border-custom rounded-2xl bg-[#09090B]/40 p-3 space-y-1.5 max-h-[450px] overflow-y-auto">
-                  <span className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider block px-2.5 py-1 font-mono">Active Matching Channels</span>
-                  {conversations.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-secondary-text">No active conversations.</div>
-                  ) : (
-                    conversations.map((conv) => {
-                      const isSel = activeChat?.id === conv.id
-                      return (
-                        <button
-                          key={conv.id}
-                          onClick={() => setActiveChat(conv)}
-                          className={`w-full flex items-center gap-2.5 p-3 rounded-xl border text-left transition cursor-pointer ${
-                            isSel
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[450px]">
+                  {/* Rooms selection list */}
+                  <div className="lg:col-span-4 border border-border-custom rounded-2xl bg-[#09090B]/40 p-3 space-y-1.5 max-h-[450px] overflow-y-auto">
+                    <span className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider block px-2.5 py-1 font-mono">Active Matching Channels</span>
+                    {conversations.length === 0 ? (
+                      <div className="text-center py-8 text-xs text-secondary-text">No active conversations.</div>
+                    ) : (
+                      conversations.map((conv) => {
+                        const isSel = activeChat?.id === conv.id
+                        return (
+                          <button
+                            key={conv.id}
+                            onClick={() => setActiveChat(conv)}
+                            className={`w-full flex items-center gap-2.5 p-3 rounded-xl border text-left transition cursor-pointer ${
+                              isSel
                               ? 'border-[#7C3AED] bg-[#7C3AED]/10 text-[#A855F7]'
                               : 'border-transparent text-secondary-text hover:bg-[#13131A] hover:text-[#FAFAFA]'
-                          }`}
-                        >
-                          <div className="truncate space-y-0.5 min-w-0 flex-1">
-                            <span className="text-xs font-bold text-[#FAFAFA] block truncate">Student: {conv.student?.name}</span>
-                            <span className="text-[10px] text-zinc-500 block truncate">Senior: {conv.senior?.name} ({conv.senior?.college})</span>
-                          </div>
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
+                              }`}
+                          >
+                            <div className="truncate space-y-0.5 min-w-0 flex-1">
+                              <span className="text-xs font-bold text-[#FAFAFA] block truncate">Student: {conv.student?.name}</span>
+                              <span className="text-[10px] text-zinc-500 block truncate">Senior: {conv.senior?.name} ({conv.senior?.college})</span>
+                            </div>
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
 
-                {/* Mod chat log */}
-                <div className="lg:col-span-8 border border-border-custom rounded-2xl bg-[#13131A]/60 flex flex-col overflow-hidden min-h-[450px]">
-                  {activeChat ? (
-                    <ChatPanel
-                      conversationId={activeChat.id}
-                      currentUserId={user.id}
-                      otherPartyName={`MODERATOR [Student: ${activeChat.student?.name} + Senior: ${activeChat.senior?.name}]`}
-                      isAdminMod={true}
-                    />
-                  ) : (
-                    <div className="flex-1 flex flex-col justify-center items-center text-center p-8 space-y-2">
-                      <MessageSquare className="h-8 w-8 text-secondary-text/30" />
-                      <h4 className="text-xs font-bold text-[#FAFAFA]">Select a conversation channel</h4>
-                      <p className="text-[10px] text-secondary-text max-w-xs leading-relaxed">
-                        Pick a conversation to monitor the messages in real time. You can write messages as administrator to moderate or support.
-                      </p>
-                    </div>
-                  )}
+                  {/* Mod chat log */}
+                  <div className="lg:col-span-8 border border-border-custom rounded-2xl bg-[#13131A]/60 flex flex-col overflow-hidden min-h-[450px]">
+                    {activeChat ? (
+                      <ChatPanel
+                        conversationId={activeChat.id}
+                        currentUserId={user.id}
+                        otherPartyName={`MODERATOR [Student: ${activeChat.student?.name} + Senior: ${activeChat.senior?.name}]`}
+                        isAdminMod={true}
+                      />
+                    ) : (
+                      <div className="flex-1 flex flex-col justify-center items-center text-center p-8 space-y-2">
+                        <MessageSquare className="h-8 w-8 text-secondary-text/30" />
+                        <h4 className="text-xs font-bold text-[#FAFAFA]">Select a conversation channel</h4>
+                        <p className="text-[10px] text-secondary-text max-w-xs leading-relaxed">
+                          Pick a conversation to monitor the messages in real time. You can write messages as administrator to moderate or support.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
-        </main>
-      </div>
-    </div>
+        </main >
+      </div >
+    </div >
   )
 }
 

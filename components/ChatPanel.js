@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Send, Loader2, ShieldAlert } from 'lucide-react'
+import { Badge } from "@/components/ui/badge"
 
 export default function ChatPanel({ conversationId, currentUserId, otherPartyName, isAdminMod = false }) {
   const [messages, setMessages] = useState([])
