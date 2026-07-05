@@ -49,7 +49,7 @@ function AdminDashboardContent() {
   const [approvedSeniors, setApprovedSeniors] = useState([])
   const [requests, setRequests] = useState([])
   const [conversations, setConversations] = useState([])
-  
+
   // Selection states
   const [selectedSeniorForRequest, setSelectedSeniorForRequest] = useState({}) // request_id -> senior_id
   const [activeChat, setActiveChat] = useState(null)
@@ -65,10 +65,16 @@ function AdminDashboardContent() {
     setLoadingData(true)
     try {
       // 1. Fetch pending seniors
-      const { data: pendingData } = await supabase
+      const { data: pendingData, error: pendingError } = await supabase
         .from('profiles')
         .select('*')
         .eq('verification_status', 'pending_approval')
+
+
+
+      console.log("Pending Seniors:", pendingData)
+      console.log("Pending Error:", pendingError)
+
       if (pendingData) setPendingSeniors(pendingData)
 
       // 2. Fetch approved seniors
@@ -109,7 +115,7 @@ function AdminDashboardContent() {
   // 1. Approve Senior Account
   const handleApproveSenior = async (seniorId) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           role: 'senior',
@@ -117,15 +123,27 @@ function AdminDashboardContent() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', seniorId)
+        .select()
 
       if (error) throw error
-      
+
+      alert("Approved successfully!")
+
       // Update local state
       const approvedSenior = pendingSeniors.find(s => s.id === seniorId)
       setPendingSeniors(prev => prev.filter(s => s.id !== seniorId))
+
       if (approvedSenior) {
-        setApprovedSeniors(prev => [...prev, { ...approvedSenior, role: 'senior', verification_status: 'approved' }])
+        setApprovedSeniors(prev => [
+          ...prev,
+          {
+            ...approvedSenior,
+            role: 'senior',
+            verification_status: 'approved'
+          }
+        ])
       }
+
     } catch (err) {
       console.error(err)
       alert(err.message || 'Failed to approve senior')
@@ -181,6 +199,8 @@ function AdminDashboardContent() {
           senior_id: seniorId,
           request_id: requestId,
         })
+      console.log("Conversation Error:", convError)
+      alert(JSON.stringify(convError))
 
       if (convError && convError.code !== '23505') { // Ignore unique constraint violation if exists
         throw convError
@@ -273,7 +293,7 @@ function AdminDashboardContent() {
 
       {/* Main Grid Workspace */}
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-4 sm:p-8 gap-8 relative z-10">
-        
+
         {/* Sidebar Nav */}
         <aside className="w-full md:w-64 shrink-0 flex flex-col gap-1">
           {TABS.map((tab) => {
@@ -286,11 +306,10 @@ function AdminDashboardContent() {
                   setActiveTab(tab.id)
                   setActiveChat(null)
                 }}
-                className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
-                  isSel
+                className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${isSel
                     ? 'bg-gradient-to-r from-primary-purple/10 to-accent-blue/10 border border-primary-purple/35 text-[#A855F7]'
                     : 'border border-transparent text-[#A1A1AA] hover:bg-[#13131A] hover:text-[#FAFAFA]'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon className="h-4.5 w-4.5" />
@@ -303,7 +322,7 @@ function AdminDashboardContent() {
 
         {/* Console Viewport */}
         <main className="flex-1 bg-[#13131A]/40 border border-border-custom rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm min-h-[500px] flex flex-col">
-          
+
           {loadingData && (
             <div className="text-center py-6">
               <Loader2 className="h-6 w-6 animate-spin text-primary-purple mx-auto" />
@@ -411,7 +430,7 @@ function AdminDashboardContent() {
                             ))}
                           </select>
                         </div>
-                        
+
                         <Button
                           onClick={() => handleAssignSenior(req.id, req.student_id)}
                           className="h-11 px-5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white text-xs font-bold shadow-md transition cursor-pointer border-none shrink-0"
@@ -515,11 +534,10 @@ function AdminDashboardContent() {
                         <button
                           key={conv.id}
                           onClick={() => setActiveChat(conv)}
-                          className={`w-full flex items-center gap-2 p-2.5 rounded-xl border text-left transition cursor-pointer ${
-                            isSel
+                          className={`w-full flex items-center gap-2 p-2.5 rounded-xl border text-left transition cursor-pointer ${isSel
                               ? 'border-[#7C3AED] bg-[#7C3AED]/10 text-[#A855F7]'
                               : 'border-transparent text-secondary-text hover:bg-[#13131A] hover:text-[#FAFAFA]'
-                          }`}
+                            }`}
                         >
                           <div className="truncate space-y-0.5">
                             <span className="text-[10px] font-black text-[#FAFAFA] block truncate">Student: {conv.student?.name}</span>

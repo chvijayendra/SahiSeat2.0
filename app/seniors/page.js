@@ -367,24 +367,33 @@ function SeniorsContent() {
           question: guidanceQuestion || "None"
         })
 
-        const { error } = await supabase
-          .from('requests')
-          .insert({
-            student_id: user.id,
-            college: guidanceCollege,
-            branch: guidanceBranch,
-            service_type: guidanceServiceType,
-            details: detailsText,
-            status: 'pending'
-          })
+       const {
+  data: { user: currentUser }
+} = await supabase.auth.getUser()
+
+if (!currentUser) {
+  alert("Please login first")
+  return
+}
+
+const { error } = await supabase
+  .from('requests')
+  .insert({
+    student_id: currentUser.id,
+    college: guidanceCollege,
+    branch: guidanceBranch,
+    service_type: guidanceServiceType,
+    details: detailsText,
+    status: 'pending'
+  })
 
         if (error) throw error
 
         setIsGuidanceModalOpen(true)
-      } catch (err) {
-        console.error(err)
-        alert("Failed to register request. Please try again.")
-      }
+      }catch (err) {
+  console.error("FULL ERROR:", err)
+  alert(JSON.stringify(err))
+}
     }
 
     if (!user) {
