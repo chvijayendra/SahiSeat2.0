@@ -6,8 +6,11 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Send, Loader2, ShieldAlert } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
+import { useToast } from '@/context/ToastContext'
+
 
 export default function ChatPanel({ conversationId, currentUserId, otherPartyName, isAdminMod = false }) {
+  const { toast } = useToast()
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [inputText, setInputText] = useState('')
@@ -111,7 +114,7 @@ export default function ChatPanel({ conversationId, currentUserId, otherPartyNam
       )
     } catch (err) {
       console.error('Error sending message:', err)
-      alert('Failed to send message. Please check connection and database RLS permissions.')
+      toast.error('Failed to send message. Please check connection and database RLS permissions.')
     } finally {
       setSending(false)
     }

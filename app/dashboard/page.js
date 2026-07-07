@@ -29,6 +29,8 @@ import {
 } from 'lucide-react'
 import ChatPanel from '@/components/ChatPanel'
 import { openRazorpayCheckout } from '@/lib/razorpayClient'
+import { useToast } from '@/context/ToastContext'
+
 
 // Updated Student tabs matching requirements
 const TABS = [
@@ -45,6 +47,8 @@ function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, profile, loading: authLoading, logout } = useAuth()
+  const { toast } = useToast()
+
 
   // Tab State
   const [activeTab, setActiveTab] = useState('overview')
@@ -171,7 +175,7 @@ function DashboardContent() {
   const handleCreateRequest = async (e) => {
     e.preventDefault()
     if (!reqCollege.trim()) {
-      alert('Please specify your target college.')
+      toast.warning('Please specify your target college.')
       return
     }
     setReqCreating(true)
@@ -197,10 +201,12 @@ function DashboardContent() {
           name: profile?.name || '',
           email: user?.email || '',
           contact: profile?.phone || '',
-        }
+        },
+        create_guidance: true,
       })
 
       if (!payment) {
+        toast.info('Payment cancelled.')
         setReqCreating(false)
         return
       }
@@ -210,10 +216,10 @@ function DashboardContent() {
       setReqDetails('')
       setShowRequestForm(false)
       fetchStudentData() // reload list
-      alert('Payment successful and counseling request submitted! SahiSeat matches you shortly.')
+      toast.success('Payment successful and counseling request submitted! SahiSeat will match you shortly.')
     } catch (err) {
       console.error(err)
-      alert(err.message || 'Failed to submit match request. Please try again.')
+      toast.error(err.message || 'Failed to submit match request. Please try again.')
     } finally {
       setReqCreating(false)
     }
@@ -605,7 +611,7 @@ function DashboardContent() {
                                 setActiveChat(chat)
                                 setActiveTab('messages')
                               } else {
-                                alert('Private chat room loading. Please click on the Messages tab.')
+                                toast.info('Private chat room loading. Please check the Messages tab.')
                               }
                             }}
                             className="px-3.5 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#7C3AED]/90 text-white text-[10px] font-bold shadow transition cursor-pointer"

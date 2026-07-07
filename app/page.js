@@ -48,6 +48,8 @@ import { useAuth } from '@/context/AuthContext'
 import LoginModal from '@/components/LoginModal'
 import { supabase } from '@/lib/supabase'
 import { openRazorpayCheckout } from '@/lib/razorpayClient'
+import { useToast } from '@/context/ToastContext'
+
 
 // Category dropdown: label shown to user, value used to match Seat Type in CSV.
 const CATEGORIES = [
@@ -2205,7 +2207,7 @@ const uniqueColleges = Array.from(
   // PDF Generator using jsPDF
   const downloadPreferencePDF = () => {
     if (savedPreferences.length === 0) {
-      alert("Your preference list is empty. Add some colleges first!")
+      toast.warning("Your preference list is empty. Add some colleges first!")
       return
     }
     const { jsPDF } = require('jspdf')
@@ -2332,7 +2334,7 @@ const uniqueColleges = Array.from(
       setExpertModalStep('success')
     } catch (err) {
       console.error('Failed to process payment:', err)
-      alert(err.message || 'Payment processing failed. Please try again.')
+      toast.error(err.message || 'Payment processing failed. Please try again.')
       setExpertModalStep('details')
     } finally {
       setExpertModalLoading(false)
@@ -2341,7 +2343,7 @@ const uniqueColleges = Array.from(
 
   const handleOpenExpertReview = () => {
     if (savedPreferences.length === 0) {
-      alert("Please add some colleges to your preference list first!")
+      toast.warning("Please add some colleges to your preference list first!")
       return
     }
     if (!user) {
@@ -2732,6 +2734,7 @@ const uniqueColleges = Array.from(
 }
 
 const App = () => {
+  const { toast } = useToast()
   const [result, setResult] = useState(null)
   const [query, setQuery] = useState(null)
 
@@ -2870,7 +2873,7 @@ const App = () => {
 
   const exportPreferenceList = () => {
     if (savedPreferences.length === 0) {
-      alert("Your preference list is empty. Add some colleges first!")
+      toast.warning("Your preference list is empty. Add some colleges first!")
       return
     }
     let text = "SahiSeat JoSAA/CSAB Choice Preference List\n"

@@ -24,12 +24,15 @@ import {
   ClipboardList,
   ShoppingCart,
   Settings,
+  Loader2,
 } from 'lucide-react'
 import InteractiveParticles from '@/components/InteractiveParticles'
 import { useAuth } from '@/context/AuthContext'
 import LoginModal from '@/components/LoginModal'
 import { supabase } from '@/lib/supabase'
 import { openRazorpayCheckout } from '@/lib/razorpayClient'
+import { useToast } from '@/context/ToastContext'
+
 
 const DISCUSS_TOPICS = [
   "Placements",
@@ -147,6 +150,7 @@ function Magnetic({ children, className = "" }) {
 function SeniorsContent() {
   const router = useRouter()
   const { user, profile, openLoginModal, logout } = useAuth()
+  const { toast } = useToast()
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
   // Handle click outside dropdown
@@ -221,6 +225,8 @@ function SeniorsContent() {
 
   // Voice Call Razorpay payment state
   const [voiceCallLoading, setVoiceCallLoading] = useState(false)
+  const [preferenceLoading, setPreferenceLoading] = useState(false)
+  const [successPlanLoading, setSuccessPlanLoading] = useState(false)
 
   const [isDesktop, setIsDesktop] = useState(true)
 
@@ -376,7 +382,7 @@ const {
 } = await supabase.auth.getUser()
 
 if (!currentUser) {
-  alert("Please login first")
+  toast.warning("Please login first")
   return
 }
 
@@ -400,15 +406,19 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
             name: profile?.name || '',
             email: user?.email || '',
             contact: profile?.phone || '',
-          }
+          },
+          create_guidance: true,
         })
 
-        if (!payment) return
+        if (!payment) {
+          toast.info('Payment cancelled.')
+          return
+        }
 
         setIsGuidanceModalOpen(true)
       } catch (err) {
         console.error(err)
-        alert(err.message || "Failed to register request. Please try again.")
+        toast.error(err.message || "Failed to register request. Please try again.")
       }
     }
 
@@ -444,7 +454,7 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
   }
 
   // Preference Review Modal submit
-  const handlePreferenceSubmit = (e) => {
+  const handlePreferenceSubmit = async (e) => {
     e.preventDefault()
     const errors = {}
     if (!preferenceProofFile && !preferenceText.trim()) {
@@ -457,7 +467,47 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
     }
 
     setPreferenceErrors({})
-    setPreferenceSubmitted(true)
+    setPreferenceLoading(true)
+
+    try {
+      const amountInPaise = 14900 // ₹149
+
+      const remarksContent = [
+        preferenceProofFile ? `Uploaded PDF: ${preferenceProofFile}` : '',
+        preferenceText.trim() ? `Pasted Choices:\n${preferenceText}` : '',
+        preferenceQuestions.trim() ? `Questions/Doubts:\n${preferenceQuestions}` : ''
+      ].filter(Boolean).join('\n\n')
+
+      const payment = await openRazorpayCheckout({
+        amountInPaise,
+        student_id: user.id,
+        service_type: 'preference',
+        remarks: remarksContent,
+        college: 'Multiple',
+        branch: '',
+        name: 'SahiSeat',
+        description: 'Preference List Audit',
+        prefill: {
+          name: profile?.name || '',
+          email: user?.email || '',
+          contact: profile?.phone || '',
+        },
+        create_guidance: true
+      })
+
+      if (!payment) {
+        toast.info('Payment cancelled.')
+        return
+      }
+
+      setPreferenceSubmitted(true)
+      toast.success('Payment successful and Choice Sheet submitted for expert audit!')
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message || 'Payment processing failed. Please try again.')
+    } finally {
+      setPreferenceLoading(false)
+    }
   }
 
   const handlePrefFileChange = (e) => {
@@ -469,7 +519,7 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
   }
 
   // Success Plan Modal submit
-  const handleSuccessPlanSubmit = (e) => {
+  const handleSuccessPlanSubmit = async (e) => {
     e.preventDefault()
     const errors = {}
     if (!planCollege.trim()) errors.college = "College name is required"
@@ -481,7 +531,43 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
     }
 
     setPlanErrors({})
-    setPlanSubmitted(true)
+    setSuccessPlanLoading(true)
+
+    try {
+      const amountInPaise = 29900 // ₹299
+
+      const remarksContent = `Current Year: ${planYear}\nCoding Level: ${planCodingLevel}\nTarget Company: ${planCompany}\nPrimary Goal: ${planGoal}`
+
+      const payment = await openRazorpayCheckout({
+        amountInPaise,
+        student_id: user.id,
+        service_type: 'roadmap',
+        remarks: remarksContent,
+        college: planCollege.trim(),
+        branch: planBranch.trim(),
+        name: 'SahiSeat',
+        description: '4-Year Success Plan + Mentorship',
+        prefill: {
+          name: profile?.name || '',
+          email: user?.email || '',
+          contact: profile?.phone || '',
+        },
+        create_guidance: true
+      })
+
+      if (!payment) {
+        toast.info('Payment cancelled.')
+        return
+      }
+
+      setPlanSubmitted(true)
+      toast.success('Payment successful and Success Plan ordered!')
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message || 'Payment processing failed. Please try again.')
+    } finally {
+      setSuccessPlanLoading(false)
+    }
   }
 
   // Community subscription
@@ -521,16 +607,17 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
           contact: profile?.phone || '',
         },
         theme: { color: '#7C3AED' },
+        create_guidance: true,
       })
 
       if (!result) {
-        alert('Payment cancelled.')
+        toast.info('Payment cancelled.')
         return
       }
 
-      alert(`✅ Payment successful!\nPayment ID: ${result.paymentId}\nYour voice call slot is verified and counseling request registered.`)
+      toast.success(`Payment successful! Your voice call slot is verified and counseling request registered.`)
     } catch (err) {
-      alert(err.message || 'Payment failed. Please try again.')
+      toast.error(err.message || 'Payment failed. Please try again.')
     } finally {
       setVoiceCallLoading(false)
     }
@@ -1881,9 +1968,17 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
                   </div>
                   <Button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold shadow-md hover:shadow-primary-purple/20 transition cursor-pointer flex items-center gap-1.5"
+                    disabled={preferenceLoading}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold shadow-md hover:shadow-primary-purple/20 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Continue to Payment →
+                    {preferenceLoading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Continue to Payment →'
+                    )}
                   </Button>
                 </div>
               </form>
@@ -2040,9 +2135,17 @@ const amountInPaise = priceMap[guidanceServiceType] || 3900
                   </div>
                   <Button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold shadow-md hover:shadow-primary-purple/20 transition cursor-pointer"
+                    disabled={successPlanLoading}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-purple to-accent-blue text-white text-xs font-bold shadow-md hover:shadow-primary-purple/20 transition cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Proceed to Payment →
+                    {successPlanLoading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Proceed to Payment →'
+                    )}
                   </Button>
                 </div>
               </form>

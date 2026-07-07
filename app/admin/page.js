@@ -33,6 +33,8 @@ import {
   ChevronLeft,
 } from 'lucide-react'
 import ChatPanel from '@/components/ChatPanel'
+import { useToast } from '@/context/ToastContext'
+
 
 const TABS = [
   { id: 'dashboard', label: 'Console Dashboard', icon: BarChart3 },
@@ -46,6 +48,8 @@ const TABS = [
 function AdminDashboardContent() {
   const router = useRouter()
   const { user, profile, loading: authLoading, logout } = useAuth()
+  const { toast } = useToast()
+
 
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loadingData, setLoadingData] = useState(false)
@@ -352,8 +356,7 @@ function AdminDashboardContent() {
 
       if (error) throw error
 
-
-      alert('Mentor verification approved successfully!')
+      toast.success('Mentor verification approved successfully!')
 
       // Update local state
       const approvedSenior = pendingSeniors.find(s => s.id === seniorId)
@@ -373,7 +376,7 @@ function AdminDashboardContent() {
       fetchAdminData()
 
     } catch (err) {
-      alert(err.message || 'Approval failed')
+      toast.error(err.message || 'Approval failed')
     }
   }
 
@@ -391,10 +394,10 @@ function AdminDashboardContent() {
         .eq('id', seniorId)
 
       if (error) throw error
-      alert('Mentor application rejected and reset to student.')
+      toast.success('Mentor application rejected and reset to student.')
       fetchAdminData()
     } catch (err) {
-      alert(err.message || 'Rejection failed')
+      toast.error(err.message || 'Rejection failed')
     }
   }
 
@@ -412,7 +415,7 @@ function AdminDashboardContent() {
       if (error) throw error
       fetchAdminData()
     } catch (err) {
-      alert(err.message || 'Failed to toggle availability status')
+      toast.error(err.message || 'Failed to toggle availability status')
     }
   }
 
@@ -420,7 +423,7 @@ function AdminDashboardContent() {
   const handleAssignMentor = async (requestId, studentId) => {
     const seniorId = selectedSeniorForRequest[requestId]
     if (!seniorId) {
-      alert('Please select a senior mentor to match.')
+      toast.warning('Please select a senior mentor to match.')
       return
     }
 
@@ -445,16 +448,16 @@ function AdminDashboardContent() {
           request_id: requestId,
         })
       console.log("Conversation Error:", convError)
-      alert(JSON.stringify(convError))
 
       if (convError && convError.code !== '23505') { // unique key ignore
+        toast.error('Conversation spin up error: ' + JSON.stringify(convError))
         throw convError
       }
 
-      alert('Mentor successfully matched! Chat conversation automatically created.')
+      toast.success('Mentor successfully matched! Chat conversation automatically created.')
       fetchAdminData()
     } catch (err) {
-      alert(err.message || 'Matching process failed')
+      toast.error(err.message || 'Matching process failed')
     }
   }
 
@@ -465,10 +468,10 @@ function AdminDashboardContent() {
         .update({ status: nextStatus })
         .eq('id', requestId)
       if (error) throw error
-      alert(`Request status successfully marked as: ${nextStatus}`)
+      toast.success(`Request status successfully marked as: ${nextStatus}`)
       fetchAdminData()
     } catch (err) {
-      alert(err.message || 'Status update failed')
+      toast.error(err.message || 'Status update failed')
     }
   }
 
@@ -480,10 +483,10 @@ function AdminDashboardContent() {
         .update({ admin_notes: notesText })
         .eq('id', requestId)
       if (error) throw error
-      alert('Admin notes updated successfully for request!')
+      toast.success('Admin notes updated successfully for request!')
       fetchAdminData()
     } catch (err) {
-      alert(err.message || 'Notes save failed')
+      toast.error(err.message || 'Notes save failed')
     }
   }
 
@@ -495,15 +498,15 @@ function AdminDashboardContent() {
         .delete()
         .eq('id', requestId)
       if (error) throw error
-      alert('Guidance request deleted.')
+      toast.success('Guidance request deleted.')
       fetchAdminData()
     } catch (err) {
-      alert(err.message || 'Failed to delete request')
+      toast.error(err.message || 'Failed to delete request')
     }
   }
 
   const handleTriggerMockRefund = async (paymentId) => {
-    alert(`Refund Request initiated for Transaction: ${paymentId}.\nRefund Status: PENDING (mock placeholder - funds will settle inside original channel).`)
+    toast.info(`Refund Request initiated for Transaction: ${paymentId}.\nRefund Status: PENDING (mock placeholder - funds will settle inside original channel).`)
   }
 
   // Filtering & Pagination Calculations

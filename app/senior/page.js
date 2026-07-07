@@ -21,6 +21,8 @@ import {
   CheckCircle,
 } from 'lucide-react'
 import ChatPanel from '@/components/ChatPanel'
+import { useToast } from '@/context/ToastContext'
+
 
 const APPROVED_TABS = [
   { id: 'home', label: 'Home', icon: Home },
@@ -47,6 +49,8 @@ const BLOCKED_EMAIL_DOMAINS = [
 function SeniorDashboardContent() {
   const router = useRouter()
   const { user, profile, loading: authLoading, logout } = useAuth()
+  const { toast } = useToast()
+
 
   // Onboarding Form States
   const [step, setStep] = useState('unverified') // unverified, pending_approval, approved
@@ -199,7 +203,7 @@ function SeniorDashboardContent() {
       setTimeout(() => setProfileSaved(false), 3000)
     } catch (err) {
       console.error(err)
-      alert(err.message || 'Failed to save profile updates')
+      toast.error(err.message || 'Failed to save profile updates')
     } finally {
       setProfileSaving(false)
     }
@@ -819,7 +823,7 @@ function SeniorDashboardContent() {
                               setActiveChat(chat)
                               setActiveTab('chats')
                             } else {
-                              alert('No private chat channel found. Please contact an administrator to activate.')
+                              toast.error('No private chat channel found. Please contact an administrator to activate.')
                             }
                           }}
                           className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-accent-blue to-primary-purple text-white text-[11px] font-bold shadow transition cursor-pointer border-none"
